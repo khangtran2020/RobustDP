@@ -9,8 +9,8 @@ from Utils.console import console
 from Utils.tracking import init_tracker
 
 def run(args, date, device):
-    read_data(args=args)
-    sys.exit()
+    tr_loader, va_loader, te_loader = read_data(args=args)
+    # sys.exit()
 
 if __name__ == "__main__":
     date = datetime.datetime.now()
