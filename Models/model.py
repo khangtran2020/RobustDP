@@ -59,7 +59,7 @@ class CNN(nn.Module):
         for i, layer in enumerate(self.cnn_layers):
             name = self.layer_name[i]
             if self.debug:
-                console.log(f"Dimension at {name}: {h.size()}, parameter img")
+                console.log(f"Dimension at {name}: {h.size()}, parameter img_s: {self.img_slist[i]}")
             if ('conv' in name) & (i > 0):
                 self.conv_drop(h)
             h = layer(h)
