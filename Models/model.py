@@ -63,11 +63,11 @@ class CNN(nn.Module):
             if ('conv' in name) & (i > 0):
                 self.conv_drop(h)
             h = layer(h)
-            if 'pool' in name:
+            if ('pool' in name) or (i==0):
                 h = self.inter_act(h)
 
         h = h.view(-1, self.flatten_size)
-        for i, layer in enumerate(self.cnn_layers):
+        for i, layer in enumerate(self.linear_layers):
             if self.debug:
                 name = self.layer_name[i]
                 console.log(f"Dimension at {name}: {h.size()}")
