@@ -24,7 +24,7 @@ class CNN(nn.Module):
         if debug:
             self.img_slist.append(img_s)
         self.cnn_layers.append(nn.MaxPool2d(2))
-        img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+        img_s = int((img_s + 2*padding - 1*(2 - 1) - 1) / 2 + 1)
         if debug:
             self.img_slist.append(img_s)
         self.layer_name.append('conv_1')
@@ -37,7 +37,7 @@ class CNN(nn.Module):
                 self.img_slist.append(img_s)
             self.cnn_layers.append(nn.MaxPool2d(2))
             self.layer_name.append(f'pool_{i+1}')
-            img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+            img_s = int((img_s + 2*padding - 1*(2 - 1) - 1) / 2 + 1)
             if debug:
                 self.img_slist.append(img_s)
 
