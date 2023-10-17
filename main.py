@@ -17,6 +17,7 @@ def run(args, date, device):
 
     if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:
+            console.log(f'[bold][green]Testing comparable of considered model')
             image, _ = next(iter(tr_loader))
             out_put = model(image)
             console.log(f"Output dimension: {out_put.size()}")
@@ -30,6 +31,7 @@ if __name__ == "__main__":
     args = parse_args()
     console.rule(f"Begin experiment: {args.project_name}")
     with console.status("Initializing...") as status:
+        console.log(f'[bold][green]Initializing')
         args_dict = print_args(args=args)
         args.debug = True if args.debug == 1 else False
         seed_everything(args.seed)
