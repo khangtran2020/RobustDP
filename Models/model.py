@@ -1,10 +1,11 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import List
+from Utils.console import console
 
 class CNN(nn.Module):
 
-    def __init__(self, channel:List, hid_dim:List, img_size:int, channel_in:int, out_dim:int, kernal_size:int=5, padding:int=0, stride:int=1, dropout:float=0.2):
+    def __init__(self, channel:List, hid_dim:List, img_size:int, channel_in:int, out_dim:int, debug:int=1, kernal_size:int=5, padding:int=0, stride:int=1, dropout:float=0.2):
         super(CNN, self).__init__()
 
         # general
@@ -38,11 +39,14 @@ class CNN(nn.Module):
         self.linear_layers.append(nn.Linear(hid_dim[-1], out_dim))
         self.conv_drop = nn.Dropout2d(dropout)
         self.linr_drop = nn.Dropout(dropout)
+        self.debug = debug
 
     def forward(self, x):
         h = x
         for i, layer in enumerate(self.cnn_layers):
             name = self.layer_name[i]
+            if self.debug:
+                console.log(f"Dimension at {name}: {h.size()}")
             if ('conv' in name) & (i > 0):
                 self.conv_drop(h)
             h = layer(h)
@@ -51,6 +55,9 @@ class CNN(nn.Module):
 
         h = h.view(-1, self.flatten_size)
         for i, layer in enumerate(self.cnn_layers):
+            if self.debug:
+                name = self.layer_name[i]
+                console.log(f"Dimension at {name}: {h.size()}")
             self.linr_drop(h)
             h = layer(h)
         return h
