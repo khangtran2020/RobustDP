@@ -26,7 +26,7 @@ def read_data(args, data_path='datasets/'):
         te_loader = torch.utils.data.DataLoader(te_dataset, batch_size=args.bs)
         console.log(f"Finish generate dataloader")
 
-        console.log(tr_loader.targets)
+        console.log(tr_dataset.targets)
         data_dict = {}
 
 
