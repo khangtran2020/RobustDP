@@ -30,7 +30,7 @@ def read_data(args, data_path='datasets/'):
         console.log(f"Finish generate dataloader")
 
         image, _ = next(iter(tr_loader))
-        args.channel_in = image.size()[1].item()
+        args.channel_in = image.size()[1]
         data_dict = {
             '# data train': f"{len(id_tr)}",
             '# data valid': f"{len(id_va)}",
