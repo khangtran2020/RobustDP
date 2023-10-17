@@ -63,7 +63,7 @@ def get_index_by_not_list(arr, test_arr):
 
 def print_args(args):
     arg_dict = {}
-    keys = ['dataset', 'project_name', 'bs']
+    keys = ['dataset', 'project_name', 'bs', 'debug']
     for key in keys:
         arg_dict[key] = getattr(args, key)
     log_table(dct=arg_dict, name='Arguments')
