@@ -21,7 +21,7 @@ def add_data_group(group):
 def add_model_group(group):
     group.add_argument("--model_type", type=str, default='sage', help="Model type")
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
-    group.add_argument('--batch_size', type=int, default=512, help="batch size for training process")
+    group.add_argument('--bs', type=int, default=128, help="batch size for training process")
     group.add_argument('--n_layers', type=int, default=2, help='# of layers')
     group.add_argument('--hid_dim', type=int, default=64, help='hidden embedding dim')
     group.add_argument("--optimizer", type=str, default='adam')
