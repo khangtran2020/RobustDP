@@ -15,6 +15,8 @@ def read_data(args, data_path='datasets/'):
             tr_dataset, te_dataset = get_mnist(path=data_path+args.dataset, size=args.img_size)
             target = tr_dataset.targets.tolist()
 
+        args.num_label = target.unique().size(dim=0)
+
         console.log(f"Finish fetching dataset: [green]{args.dataset}[/green]")
         dataset_size = len(tr_dataset)
         indices = list(range(dataset_size))
@@ -28,14 +30,13 @@ def read_data(args, data_path='datasets/'):
         console.log(f"Finish generate dataloader")
 
         image, _ = next(iter(tr_loader))
-        args.num_label = target.unique().size(dim=0)
         args.channel_in = image.size()[1].item()
         data_dict = {
             '# data train': f"{len(id_tr)}",
             '# data valid': f"{len(id_va)}",
             '# data test': f"{te_dataset.targets.size(dim=0)}",
             '# features':  f"{image.size()[1:].tolist()}",
-            '# labels': f"{target.unique().size(dim=0)}",
+            '# labels': f"{args.num_label}",
             'batch size': f"{image.size(dim=0)}"
         }
         log_table(dct=data_dict, name=f"{args.dataset}'s Property")
