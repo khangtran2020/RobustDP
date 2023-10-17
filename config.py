@@ -16,6 +16,7 @@ def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
     group.add_argument('--dataset', type=str, default='mnist', help="name of dataset")
     group.add_argument("--data_mode", type=str, default='none', help="Mode for data processing")
+    group.add_argument('--img_size', type=int, default=28, help='Size of a square image')
 
 
 def add_model_group(group):
