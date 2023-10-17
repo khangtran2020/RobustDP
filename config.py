@@ -9,11 +9,12 @@ def add_general_group(group):
     group.add_argument("--device", type=str, default='cpu', help="device for running experiments")
     group.add_argument("--debug", type=int, default=0, help='running with debug mode or not')
     group.add_argument("--performance_metric", type=str, default='acc', help="Metrics of performance")
+    group.add_argument("--project_name", type=str, default='', help="")
 
 
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
-    group.add_argument('--dataset', type=str, default='cora', help="name of dataset")
+    group.add_argument('--dataset', type=str, default='mnist', help="name of dataset")
     group.add_argument("--data_mode", type=str, default='none', help="Mode for data processing")
 
 

@@ -67,6 +67,7 @@ def print_args(args):
     for key in keys:
         arg_dict[key] = getattr(args, key)
     log_table(dct=arg_dict, name='Arguments')
+    return arg_dict
 
 def read_pickel(file):
     with open(file, 'rb') as f:
