@@ -13,10 +13,10 @@ def read_data(args, data_path='datasets/'):
         # get train and test dataset
         if args.dataset == 'mnist':
             tr_dataset, te_dataset = get_mnist(path=data_path+args.dataset, size=args.img_size)
-            target = tr_dataset.targets.tolist()
+            target = tr_dataset.targets
 
         args.num_label = target.unique().size(dim=0)
-
+        target = target.tolist()
         console.log(f"Finish fetching dataset: [green]{args.dataset}[/green]")
         dataset_size = len(tr_dataset)
         indices = list(range(dataset_size))
