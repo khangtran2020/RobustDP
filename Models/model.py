@@ -11,22 +11,35 @@ class CNN(nn.Module):
         # general
         self.layer_name = []
         self.inter_act = nn.ReLU()
+
+        if debug:
+            self.img_slist = []
         # conv part
         img_s = img_size
+        if debug:
+            self.img_slist.append(img_s)
         self.cnn_layers = nn.ModuleList()
         self.cnn_layers.append(nn.Conv2d(channel_in, channel[0], kernel_size=kernal_size, padding=padding, stride=stride))
         img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+        if debug:
+            self.img_slist.append(img_s)
         self.cnn_layers.append(nn.MaxPool2d(2))
         img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+        if debug:
+            self.img_slist.append(img_s)
         self.layer_name.append('conv_1')
         self.layer_name.append('pool_1')
         for i in range(1, len(channel)):
             self.cnn_layers.append(nn.Conv2d(channel[i-1], channel[i], kernel_size=kernal_size, padding=padding, stride=stride))
             self.layer_name.append(f'conv_{i+1}')
             img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+            if debug:
+                self.img_slist.append(img_s)
             self.cnn_layers.append(nn.MaxPool2d(2))
             self.layer_name.append(f'pool_{i+1}')
             img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+            if debug:
+                self.img_slist.append(img_s)
 
         self.flatten_size = img_s*img_s*channel[-1]
         # linear part
@@ -46,7 +59,7 @@ class CNN(nn.Module):
         for i, layer in enumerate(self.cnn_layers):
             name = self.layer_name[i]
             if self.debug:
-                console.log(f"Dimension at {name}: {h.size()}")
+                console.log(f"Dimension at {name}: {h.size()}, parameter img")
             if ('conv' in name) & (i > 0):
                 self.conv_drop(h)
             h = layer(h)
