@@ -15,7 +15,7 @@ def run(args, date, device):
     model = CNN(channel=[32, 32, 64], hid_dim=[256], img_size=args.img_size, channel_in=args.channel_in, out_dim=args.num_label, kernal_size=5)
     console.log(f"Model: {model}")
 
-    if args.debug > 1:
+    if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:
             image, _ = next(iter(tr_loader))
             out_put = model(image)
