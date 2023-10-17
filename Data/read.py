@@ -21,7 +21,7 @@ def read_data(args, data_path='datasets/'):
         train_sampler = SubsetRandomSampler(train_indices)
         valid_sampler = SubsetRandomSampler(val_indices)
 
-        tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=train_sampler, shuffle=True, drop_last=True)
+        tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=train_sampler, drop_last=True)
         va_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=valid_sampler)
         te_loader = torch.utils.data.DataLoader(te_dataset, batch_size=args.bs)
         console.log(f"Finish generate dataloader")
