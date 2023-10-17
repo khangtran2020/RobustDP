@@ -35,7 +35,7 @@ def read_data(args, data_path='datasets/'):
             '# data train': f"{len(id_tr)}",
             '# data valid': f"{len(id_va)}",
             '# data test': f"{te_dataset.targets.size(dim=0)}",
-            '# features':  f"{image.size()[1:].item()}",
+            '# features':  f"{image.size()[1:]}",
             '# labels': f"{args.num_label}",
             'batch size': f"{image.size(dim=0)}"
         }
