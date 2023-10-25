@@ -54,8 +54,6 @@ class CNN(nn.Module):
         h = x
         for i, layer in enumerate(self.cnn_layers):
             name = self.layer_name[i]
-            if self.debug:
-                console.log(f"Dimension at {name}: {h.size()}, parameter img_s: {self.img_slist[i]}")
             if ('conv' in name) & (i > 0):
                 self.conv_drop(h)
             h = layer(h)
@@ -64,9 +62,6 @@ class CNN(nn.Module):
 
         h = h.view(-1, self.flatten_size)
         for i, layer in enumerate(self.linear_layers):
-            if self.debug:
-                name = self.layer_name[i]
-                console.log(f"Dimension at {name}: {h.size()}")
             self.linr_drop(h)
             h = layer(h)
         return h
