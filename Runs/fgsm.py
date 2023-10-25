@@ -55,12 +55,12 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 perturbed_data_normalized = torch.unsqueeze(perturbed_data_normalized, dim=0)
                 adv_data = torch.cat((adv_data, perturbed_data_normalized), dim=0)
 
-            print(f"Size of the data: {data.size()}, {adv_data.size()}")
+            # print(f"Size of the data: {data.size()}, {adv_data.size()}")
             output = model(adv_data)
 
             # Check for success
             final_pred = output.max(1, keepdim=True)[1]
-            print(f"Size of the prediction: {init_pred.size()}, {final_pred.size()}")
+            # print(f"Size of the prediction: {init_pred.size()}, {final_pred.size()}")
             metrics.update(final_pred, init_pred)
 
             if (i == 0):
