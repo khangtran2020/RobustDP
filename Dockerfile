@@ -22,7 +22,7 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_6
 ENV PATH /opt/conda/bin:$PATH
 
 RUN conda update conda \
-    && conda env create --name rdp
+    && conda create -n rdp python=3.9
 
 RUN adduser --disabled-password --gecos '' newuser \
     && adduser newuser sudo \
