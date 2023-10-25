@@ -11,7 +11,7 @@ def read_data(args, data_path='datasets/'):
     with console.status("Reading data ...") as status:
         # get train and test dataset
 
-        if args.dataset == 'mnist':
+        if args.data == 'mnist':
             tr_dataset, te_dataset = get_mnist(path=data_path+args.dataset, size=args.img_size)
             target = tr_dataset.targets
 
