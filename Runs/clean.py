@@ -3,6 +3,7 @@ import torchmetrics
 from rich.progress import Progress
 from typing import Dict
 from Models.modules import EarlyStopping
+from Models.utils import clipping_weight
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
@@ -53,6 +54,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 metrics.update(pred, target)
                 loss.backward()
                 optimizer.step()
+                model = clipping_weight(model=model, clip=args.clipw)
                 tr_loss += loss.item()*pred.size(dim=0)
                 ntr += pred.size(dim=0)
                 progress.advance(tk_up)

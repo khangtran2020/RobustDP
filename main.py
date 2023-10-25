@@ -5,6 +5,7 @@ import datetime
 from config import parse_args
 from Data.read import read_data
 from Models.model import CNN
+from Models.utils import clipping_weight, check_clipped
 from Runs.clean import train, evalt
 from Utils.utils import print_args, seed_everything, init_history, get_name
 from Utils.console import console
@@ -16,6 +17,13 @@ def run(args, date, device):
     name = get_name(args=args, current_date=date)
     tr_loader, va_loader, te_loader = read_data(args=args)
     model = CNN(channel=[32, 32, 64], hid_dim=[256], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=5, debug=args.debug)
+    model = clipping_weight(model=model, clip=args.clipw)
+    if args.debug > 0:
+        checked = check_clipped(model=model, clip=args.clipw)
+        if checked:
+            console.log('[bold][green] Pass initial clip check: :white_check_mark:')
+        else:
+            console.log('[bold][red] Failed initial clip check: :x:')
 
     if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:
