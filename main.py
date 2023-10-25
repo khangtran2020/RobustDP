@@ -2,6 +2,7 @@ import os
 import sys
 import torch
 import datetime
+import warnings
 from config import parse_args
 from Data.read import read_data
 from Models.model import CNN
@@ -11,6 +12,8 @@ from Runs.dpsgd import traindp
 from Utils.utils import print_args, seed_everything, init_history, get_name
 from Utils.console import console
 from Utils.tracking import init_tracker
+
+warnings.filterwarnings("ignore")
 
 def run(args, date, device):
     
@@ -40,7 +43,7 @@ def run(args, date, device):
         model, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
 
     model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
-    
+
 
     # sys.exit()
 
