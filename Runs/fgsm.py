@@ -50,7 +50,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
             adv_data = torch.Tensor([]).to(device)
             for j in range(data.size(dim=0)):
-                perturbed_data = fgsm_attack(data_denorm, radius, data_grad)
+                perturbed_data = fgsm_attack(data_denorm[j], radius[j], data_grad[j])
                 perturbed_data_normalized = transforms.Normalize((0.1307,), (0.3081,))(perturbed_data)
                 adv_data = torch.cat((adv_data, perturbed_data_normalized), dim=0)
             output = model(perturbed_data_normalized)
