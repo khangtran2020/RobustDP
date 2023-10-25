@@ -7,7 +7,7 @@ def clipping_weight(model:torch.nn.Module, clip:float):
     with torch.no_grad():
         for n, p in model.named_parameters():
             if ('weight' in n):
-                p.values = p * min(1, clip / (p.norm(p=2) + 1e-12))
+                p.data = p * min(1, clip / (p.norm(p=2) + 1e-12))
 
     return model
 
