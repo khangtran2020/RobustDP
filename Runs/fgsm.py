@@ -76,7 +76,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
 def log_test_predictions(org_imgs, adv_imgs, labels, org_pred, adv_pred):
 
-    columns=["id", "org_img", "adv_img", "label", "original prediction", "adversarial prediction"]
+    columns=["id", "label", "org_img", "original prediction", "adv_img", "adversarial prediction"]
     test_table = wandb.Table(columns=columns)
 
     log_org_images = org_imgs.detach().cpu().numpy()
