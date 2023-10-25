@@ -1,3 +1,4 @@
+import sys
 import torch
 from Utils.console import console
 
@@ -17,6 +18,7 @@ def check_clipped(model:torch.nn.Module, clip:float):
         for n, p in model.named_parameters():
             if ('weight' in n) & (p.norm(p=2).item() > clip):
                 console.log(f'[bold][red] Failed initial clip check :x:: clip is {clip} and norm is {p.norm(p=2).item()}')
+                sys.exit()
     if res:
         console.log('[bold][green] Pass initial clip check: :white_check_mark:')
     return res
