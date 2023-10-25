@@ -42,6 +42,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
         max_grad_norm=args.clip,
     )
 
+    console.log(f"Using sigma={optimizer.noise_multiplier} and C={args.clip}")
+
     es = EarlyStopping(patience=15, mode='max', verbose=False)
 
     with Progress(console=console) as progress:
