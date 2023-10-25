@@ -12,12 +12,12 @@ def read_data(args, data_path='datasets/'):
         # get train and test dataset
 
         if args.data == 'mnist':
-            tr_dataset, te_dataset = get_mnist(path=data_path+args.dataset, size=args.img_size)
+            tr_dataset, te_dataset = get_mnist(path=data_path+args.data, size=args.img_size)
             target = tr_dataset.targets
 
         args.num_class = target.unique().size(dim=0)
         target = target.tolist()
-        console.log(f"Finish fetching dataset: [green]{args.dataset}[/green]")
+        console.log(f"Finish fetching dataset: [green]{args.data}[/green]")
         dataset_size = len(tr_dataset)
         indices = list(range(dataset_size))
         id_tr, id_va, _, _ = train_test_split(indices, target, test_size=0.15, stratify=target)
@@ -39,7 +39,7 @@ def read_data(args, data_path='datasets/'):
             '# labels': f"{args.num_class}",
             'batch size': f"{image.size(dim=0)}"
         }
-        log_table(dct=data_dict, name=f"{args.dataset}'s Property")
+        log_table(dct=data_dict, name=f"{args.data}'s Property")
         console.log(f'[bold][green]Done!')
     return tr_loader, va_loader, te_loader
 
