@@ -66,6 +66,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 ) as memory_safe_data_loader:
                 for bi, d in enumerate(memory_safe_data_loader):
                     model.zero_grad()
+                    optimizer.zero_grad()
                     data, target = d
                     pred = model(data)
                     loss = objective(pred, target)
