@@ -9,7 +9,8 @@ from Models.model import CNN
 from Models.utils import clipping_weight, check_clipped
 from Runs.clean import train, evalt
 from Runs.dpsgd import traindp
-from Utils.utils import print_args, seed_everything, init_history, get_name
+from Runs.fgsm import robust_eval_clean
+from Utils.utils import print_args, seed_everything, init_history, get_name, save_dict
 from Utils.console import console
 from Utils.tracking import init_tracker
 
@@ -25,7 +26,6 @@ def run(args, date, device):
     if args.debug > 0:
         checked = check_clipped(model=model, clip=args.clipw)
         
-
     if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:
             console.log(f"Model: {model}")
@@ -43,9 +43,17 @@ def run(args, date, device):
         model, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
 
     model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
+    if args.att_mode == 'fgsm-clean':
+        robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=20, history=att_hist)
 
-
-    # sys.exit()
+    general_hist = {
+        'data': data_hist,
+        'model': model_hist,
+        'att': att_hist
+    }
+    general_path = args.res_path + f"{name['general']}.pkl"
+    save_dict(path=general_path, dct=general_hist)
+    console.log(f"Saved result at path {general_path}.")
 
 if __name__ == "__main__":
     date = datetime.datetime.now()

@@ -48,6 +48,8 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             for bi, d in enumerate(tr_loader):
                 model.zero_grad()
                 data, target = d
+                data = data.to(device)
+                target = target.to(device)
                 pred = model(data)
                 loss = objective(pred, target)
                 pred = pred_fn(pred)
@@ -70,6 +72,8 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             with torch.no_grad():
                 for bi, d in enumerate(va_loader):
                     data, target = d
+                    data = data.to(device)
+                    target = target.to(device)
                     pred = model(data)
                     loss = objective(pred, target)
                     pred = pred_fn(pred)
@@ -118,7 +122,7 @@ def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, de
     console.log(f"[green]Evaluate Test / Objective of the training process[/green]: {objective}")
     console.log(f"[green]Evaluate Test / Predictive activation[/green]: {pred_fn}")
     console.log(f"[green]Evaluate Test / Evaluating with metrics[/green]: {metrics}")
-
+    model.to(device)
     with Progress(console=console) as progress:
         task1 = progress.add_task("[red]Evaluating Test ...", total=len(te_loader))
         te_loss = 0
@@ -128,6 +132,8 @@ def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, de
         with torch.no_grad():
             for bi, d in enumerate(te_loader):
                 data, target = d
+                data = data.to(device)
+                target = target.to(device)
                 pred = model(data)
                 loss = objective(pred, target)
                 pred = pred_fn(pred)

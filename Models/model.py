@@ -21,11 +21,13 @@ class CNN(nn.Module):
         self.cnn_layers = nn.ModuleList()
         self.cnn_layers.append(nn.Conv2d(channel_in, channel[0], kernel_size=kernal_size, padding=padding, stride=stride))
         img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+        self.num_trans = 1
         if debug:
             self.img_slist.append(img_s)
         self.layer_name.append('conv_1')
         for i in range(1, len(channel)):
             self.cnn_layers.append(nn.Conv2d(channel[i-1], channel[i], kernel_size=kernal_size, padding=padding, stride=stride))
+            self.num_trans += 1
             self.layer_name.append(f'conv_{i+1}')
             img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
             if debug:
@@ -42,8 +44,10 @@ class CNN(nn.Module):
         self.linear_layers = nn.ModuleList()
         self.linear_layers.append(nn.Linear(self.flatten_size, hid_dim[0]))
         self.layer_name.append('linr_1')
+        self.num_trans += 1
         for i in range(1, len(hid_dim)):
             self.linear_layers.append(nn.Linear(hid_dim[i-1], hid_dim[i]))
+            self.num_trans += 1
             self.layer_name.append(f'linr_{i+1}')
         self.linear_layers.append(nn.Linear(hid_dim[-1], out_dim))
         self.conv_drop = nn.Dropout2d(dropout)

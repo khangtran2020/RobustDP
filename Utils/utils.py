@@ -29,6 +29,7 @@ def get_name(args, current_date):
     data_keys = ['data', 'seed', 'data_mode']
     model_keys = ['data', 'gen_mode', 'seed', 'model', 'lr', 'nlay', 'hdim', 'epochs', 'opt', 'clipw']
     gen_keys = ['data', 'gen_mode', 'data_mode', 'seed', 'model', 'nlay', 'hdim']
+    att_keys = ['att_mode']
 
     general_str = ''
     for key in gen_keys:
@@ -43,10 +44,15 @@ def get_name(args, current_date):
     for key in model_keys:
         model_str += f"{key}_{getattr(args, key)}_"
 
+    att_str = ''
+    for key in att_keys:
+        att_str += f"{key}_{getattr(args, key)}_"
+
     name = {
         'data': data_str[:-1],
         'model': model_str[:-1],
-        'general': general_str
+        'general': general_str,
+        'att': att_str
     }
 
     return name
@@ -70,7 +76,7 @@ def get_index_by_not_list(arr, test_arr):
 def print_args(args):
     arg_dict = {}
     keys = ['gen_mode', 'data', 'data_mode', 'proj_name', 'img_sz', 'bs', 'debug', 'model', 'lr', 'bs', 
-            'nlay', 'hdim', 'opt', 'dout', 'epochs', 'clipw']
+            'nlay', 'hdim', 'opt', 'dout', 'epochs', 'clipw', 'device', 'att_mode']
     for key in keys:
         arg_dict[f'{key}'] = f'{getattr(args, key)}'
     log_table(dct=arg_dict, name='Arguments')

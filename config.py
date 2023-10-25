@@ -11,13 +11,11 @@ def add_general_group(group):
     group.add_argument("--metric", type=str, default='acc', help="Metrics of performance")
     group.add_argument("--proj_name", type=str, default='', help="", required=True)
 
-
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/dataset/', help="dir path to dataset")
     group.add_argument('--data', type=str, default='mnist', help="name of dataset")
     group.add_argument("--data_mode", type=str, default='none', help="Mode for data processing")
     group.add_argument('--img_sz', type=int, default=28, help='Size of a square image')
-
 
 def add_model_group(group):
     group.add_argument("--model", type=str, default='cnn', help="Model type")
@@ -36,6 +34,9 @@ def add_dp_group(group):
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
     group.add_argument('--max_bs', type=int, default=128, help="max physical batch size for opacus / dpsgd training")
 
+def add_model_attack_group(group):
+    group.add_argument("--att_mode", type=str, default='fsgm-clean', help="Attack mode", required=True)
+
 def parse_args():
     parser = argparse.ArgumentParser()
     exp_grp = parser.add_argument_group(title="Attack setting")
@@ -44,4 +45,5 @@ def parse_args():
     add_data_group(exp_grp)
     add_model_group(exp_grp)
     add_dp_group(exp_grp)
+    add_model_attack_group(exp_grp)
     return parser.parse_args()
