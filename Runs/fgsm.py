@@ -46,7 +46,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             model.zero_grad()
             loss.backward()
             data_grad = data.grad.data
-            data_denorm = denorm(data)
+            data_denorm = denorm(data, device=device)
 
             adv_data = torch.Tensor([]).to(device)
             for j in range(data.size(dim=0)):
