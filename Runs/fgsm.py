@@ -79,11 +79,11 @@ def log_test_predictions(org_imgs, adv_imgs, labels, org_pred, adv_pred):
     columns=["id", "org_img", "adv_img", "label", "original prediction", "adversarial prediction"]
     test_table = wandb.Table(columns=columns)
 
-    log_org_images = org_imgs.cpu().numpy()
-    log_adv_images = adv_imgs.cpu().numpy()
-    log_labels = labels.cpu().numpy()
-    log_org_preds = org_pred.cpu().numpy()
-    log_adv_preds = adv_pred.cpu().numpy()
+    log_org_images = org_imgs.detach().cpu().numpy()
+    log_adv_images = adv_imgs.detach().cpu().numpy()
+    log_labels = labels.detach().cpu().numpy()
+    log_org_preds = org_pred.detach().cpu().numpy()
+    log_adv_preds = adv_pred.detach().cpu().numpy()
 
     # adding ids based on the order of the images
     idx = 0
