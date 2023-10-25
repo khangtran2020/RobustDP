@@ -22,7 +22,7 @@ def add_data_group(group):
 def add_model_group(group):
     group.add_argument("--model", type=str, default='cnn', help="Model type")
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
-    group.add_argument('--bs', type=int, default=128, help="batch size for training process")
+    group.add_argument('--bs', type=int, default=512, help="batch size for training process")
     group.add_argument('--nlay', type=int, default=2, help='# of layers')
     group.add_argument('--hdim', type=int, default=64, help='hidden embedding dim')
     group.add_argument("--opt", type=str, default='adam')
@@ -32,9 +32,9 @@ def add_model_group(group):
     group.add_argument("--epochs", type=int, default=100, help='training step')
 
 def add_dp_group(group):
-    group.add_argument("--ns", type=float, default=1.0, help='noise scale for dp')
+    group.add_argument("--eps", type=float, default=1.0, help='target privacy budget')
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
-    group.add_argument('--sampling_rate', type=float, default=0.08, help="batch size for training process")
+    group.add_argument('--max_bs', type=int, default=128, help="max physical batch size for opacus / dpsgd training")
 
 def parse_args():
     parser = argparse.ArgumentParser()
