@@ -7,6 +7,7 @@ from Data.read import read_data
 from Models.model import CNN
 from Models.utils import clipping_weight, check_clipped
 from Runs.clean import train, evalt
+from Runs.dpsgd import traindp
 from Utils.utils import print_args, seed_everything, init_history, get_name
 from Utils.console import console
 from Utils.tracking import init_tracker
@@ -35,8 +36,11 @@ def run(args, date, device):
     # train the model
     if args.gen_mode == 'clean':
         model, model_hist = train(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
+    else:
+        model, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
 
-
+    model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
+    
 
     # sys.exit()
 

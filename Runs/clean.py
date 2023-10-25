@@ -143,3 +143,4 @@ def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, de
             history['best_test_loss'] = te_loss
             history['best_test_perf'] = te_perf
             metrics.reset()
+    return history
