@@ -15,7 +15,7 @@ def run(args, date, device):
     data_hist, model_hist, att_hist = init_history(args=args)
     name = get_name(args=args, current_date=date)
     tr_loader, va_loader, te_loader = read_data(args=args)
-    model = CNN(channel=[32, 32, 64], hid_dim=[256], img_size=args.img_size, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=5)
+    model = CNN(channel=[32, 32, 64], hid_dim=[256], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=5)
 
     if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:

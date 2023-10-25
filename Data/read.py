@@ -12,7 +12,7 @@ def read_data(args, data_path='datasets/'):
         # get train and test dataset
 
         if args.data == 'mnist':
-            tr_dataset, te_dataset = get_mnist(path=data_path+args.data, size=args.img_size)
+            tr_dataset, te_dataset = get_mnist(path=data_path+args.data, size=args.img_sz)
             target = tr_dataset.targets
 
         args.num_class = target.unique().size(dim=0)
