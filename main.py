@@ -20,10 +20,7 @@ def run(args, date, device):
     model = clipping_weight(model=model, clip=args.clipw)
     if args.debug > 0:
         checked = check_clipped(model=model, clip=args.clipw)
-        if checked:
-            console.log('[bold][green] Pass initial clip check: :white_check_mark:')
-        else:
-            console.log('[bold][red] Failed initial clip check: :x:')
+        
 
     if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:
