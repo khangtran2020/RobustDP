@@ -9,7 +9,7 @@ from opacus.utils.batch_memory_manager import BatchMemoryManager
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
-def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict, name=str):
+def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
     optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr)
@@ -58,6 +58,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             num_step = len(tr_loader)
 
             # train
+            model.train()
             with BatchMemoryManager(
                     data_loader=tr_loader, 
                     max_physical_batch_size=args.max_bs, 
@@ -85,6 +86,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             nva = 0
 
             # validation
+            model.eval()
             with torch.no_grad():
                 for bi, d in enumerate(va_loader):
                     data, target = d
@@ -121,42 +123,3 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
         console.log(f"Done Training target model: :white_check_mark:")
     model.load_state_dict(torch.load(args.model_path + model_name))
     return model, history
-
-def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict):
-
-    if args.num_class > 1:
-        objective = torch.nn.CrossEntropyLoss().to(device)
-        pred_fn = torch.nn.Softmax(dim=1).to(device)
-        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
-    else:
-        objective = torch.nn.BCEWithLogitsLoss().to(device)
-        pred_fn = torch.nn.Sigmoid().to(device)
-        metrics = torchmetrics.classification.BinaryAccuracy().to(device)
-    
-    console.log(f"[green]Evaluate Test / Objective of the training process[/green]: {objective}")
-    console.log(f"[green]Evaluate Test / Predictive activation[/green]: {pred_fn}")
-    console.log(f"[green]Evaluate Test / Evaluating with metrics[/green]: {metrics}")
-
-    with Progress(console=console) as progress:
-        task1 = progress.add_task("[red]Evaluating Test ...", total=len(te_loader))
-        te_loss = 0
-        nte = 0
-        # validation
-        with torch.no_grad():
-            for bi, d in enumerate(te_loader):
-                data, target = d
-                pred = model(data)
-                loss = objective(pred, target)
-                pred = pred_fn(pred)
-                metrics.update(pred, target)
-                te_loss += loss.item()*pred.size(dim=0)
-                nte += pred.size(dim=0)
-                progress.update(task1, advance=bi+1)
-
-            te_loss = te_loss / nte 
-            te_perf = metrics.compute().item()
-            wandb.run.summary['te_loss'] = '{0:.3f}'.format(te_loss)
-            wandb.run.summary['te_acc'] = '{0:.3f}'.format(te_perf)
-            history['best_test_loss'] = te_loss
-            history['best_test_perf'] = te_perf
-            metrics.reset()

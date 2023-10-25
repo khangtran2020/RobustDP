@@ -27,7 +27,6 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
     console.log(f"[green]Train / Evaluating with metrics[/green]: {metrics}")
 
     model.to(device)
-    model.train()
 
     es = EarlyStopping(patience=15, mode='max', verbose=False)
 
@@ -43,6 +42,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             tr_loss = 0
             ntr = 0
             num_step = len(tr_loader)
+            model.train()
 
             # train
             for bi, d in enumerate(tr_loader):
@@ -65,7 +65,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
 
             va_loss = 0
             nva = 0
-
+            model.eval()
             # validation
             with torch.no_grad():
                 for bi, d in enumerate(va_loader):
@@ -124,6 +124,7 @@ def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, de
         te_loss = 0
         nte = 0
         # validation
+        model.eval()
         with torch.no_grad():
             for bi, d in enumerate(te_loader):
                 data, target = d
