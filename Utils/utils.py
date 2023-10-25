@@ -27,7 +27,7 @@ def get_name(args, current_date):
 
     date_str = f'{current_date.day}{current_date.month}{current_date.year}-{current_date.hour}{current_date.minute}'
     data_keys = ['data', 'seed', 'data_mode']
-    model_keys = ['data', 'gen_mode', 'seed', 'model', 'lr', 'nlay', 'hdim', 'epochs', 'opt']
+    model_keys = ['data', 'gen_mode', 'seed', 'model', 'lr', 'nlay', 'hdim', 'epochs', 'opt', 'clipw']
     gen_keys = ['data', 'gen_mode', 'data_mode', 'seed', 'model', 'nlay', 'hdim']
 
     general_str = ''
@@ -70,7 +70,7 @@ def get_index_by_not_list(arr, test_arr):
 def print_args(args):
     arg_dict = {}
     keys = ['gen_mode', 'data', 'data_mode', 'proj_name', 'img_sz', 'bs', 'debug', 'model', 'lr', 'bs', 
-            'nlay', 'hdim', 'opt', 'dout', 'epochs']
+            'nlay', 'hdim', 'opt', 'dout', 'epochs', 'clipw']
     for key in keys:
         arg_dict[f'{key}'] = f'{getattr(args, key)}'
     log_table(dct=arg_dict, name='Arguments')
