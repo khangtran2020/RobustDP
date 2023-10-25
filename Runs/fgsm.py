@@ -57,6 +57,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
             # Check for success
             final_pred = output.max(1, keepdim=True)
+            print(f"Size of the prediction: {init_pred.size()}, {final_pred.size()}")
             metrics.update(final_pred, init_pred)
 
             if (i == 0):
