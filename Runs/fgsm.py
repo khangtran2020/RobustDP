@@ -35,7 +35,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             data, target = data.to(device), target.to(device)
             data.requires_grad = True
             output = model(data)
-            init_pred = output.max(1, keepdim=True)
+            init_pred = output.max(1, keepdim=True)[1]
 
             top_2, _ = torch.topk(input=output, k=2)
             L = args.clipw ** model.num_trans
@@ -56,7 +56,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             output = model(perturbed_data_normalized)
 
             # Check for success
-            final_pred = output.max(1, keepdim=True)
+            final_pred = output.max(1, keepdim=True)[1]
             print(f"Size of the prediction: {init_pred.size()}, {final_pred.size()}")
             metrics.update(final_pred, init_pred)
 
