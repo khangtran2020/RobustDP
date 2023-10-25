@@ -40,7 +40,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             top_2, _ = torch.topk(input=output, k=2)
             L = args.clipw ** model.num_trans
             M = args.clipw
-            radius = (top_2[:,0] - top_2[:,1]).abs().squeeze().item() / (L*M*args.img_sz**2)
+            radius = (top_2[:,0] - top_2[:,1]).abs().squeeze() / (L*M*args.img_sz**2)
             
             loss = F.nll_loss(output, target)
             model.zero_grad()
