@@ -101,7 +101,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             metrics.reset()
 
             results = {
-                "Target epoch": epoch,
+                "Target epoch": epoch+1,
                 "Target train/loss": tr_loss, 
                 "Target train/acc": tr_perf, 
                 "Target val/loss": va_loss, 
