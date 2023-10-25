@@ -22,5 +22,5 @@ def log_table(dct:Dict, name:str):
     table.add_column("Values", style="value")
 
     for key in dct.keys():
-        table.add_row(key, str(dct[key]))
+        table.add_row(key, dct[key])
     console.log(table)

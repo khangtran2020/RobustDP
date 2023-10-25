@@ -24,29 +24,35 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 def get_name(args, current_date):
-    dataset_str = f'{args.dataset}_run_{args.seed}_'
-    date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
-    if args.mode != 'mlp':
-        model_str = f'{args.model_type}_{args.mode}_{args.epochs}_hops_{args.n_layers}_'
-    else:
-        model_str = f'{args.model_type}_{args.mode}_{args.mlp_mode}_{args.epochs}_hops_{args.n_layers}_'
-    dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
-    desity_str = f'{args.submode}_{args.density}_'
-    if args.mode == 'clean':
-        if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
-            res_str = dataset_str + model_str + date_str
-        else:
-            res_str = dataset_str + model_str + desity_str + date_str
-    else:
-        if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
-            res_str = dataset_str + model_str + dp_str + date_str
-        else:
-            res_str = dataset_str + model_str + dp_str + desity_str + date_str
-    return res_str
 
-def save_res(name, args, dct):
-    save_name = args.res_path + name
-    with open('{}.pkl'.format(save_name), 'wb') as f:
+    date_str = f'{current_date.day}{current_date.month}{current_date.year}-{current_date.hour}{current_date.minute}'
+    data_keys = ['data', 'seed', 'data_mode']
+    model_keys = ['data', 'gen_mode', 'seed', 'model', 'lr', 'nlay', 'hdim', 'epochs', 'opt']
+    gen_keys = ['data', 'gen_mode', 'data_mode', 'seed', 'model', 'nlay', 'hdim']
+
+    general_str = ''
+    for key in gen_keys:
+        general_str += f"{key}_{getattr(args, key)}_"
+    general_str += date_str
+
+    data_str = ''
+    for key in data_keys:
+        data_str += f"{key}_{getattr(args, key)}_"
+    
+    model_str = ''
+    for key in model_keys:
+        model_str += f"{key}_{getattr(args, key)}_"
+
+    name = {
+        'data': data_str[:-1],
+        'model': model_str[:-1],
+        'general': general_str
+    }
+
+    return name
+
+def save_dict(path, dct):
+    with open(path, 'wb') as f:
         pickle.dump(dct, f)
 
 def get_index_by_value(a, val):
@@ -63,9 +69,10 @@ def get_index_by_not_list(arr, test_arr):
 
 def print_args(args):
     arg_dict = {}
-    keys = ['dataset', 'project_name', 'bs', 'debug']
+    keys = ['gen_mode', 'data', 'data_mode', 'proj_name', 'img_sz', 'bs', 'debug', 'model', 'lr', 'bs', 
+            'nlay', 'hdim', 'opt', 'dout', 'epochs']
     for key in keys:
-        arg_dict[key] = getattr(args, key)
+        arg_dict[f'{key}'] = f'{getattr(args, key)}'
     log_table(dct=arg_dict, name='Arguments')
     return arg_dict
 
@@ -74,18 +81,30 @@ def read_pickel(file):
         res = pickle.load(f)
     return res
 
-def init_history():
-    history = {
+def init_history(args):
+
+    data_hist = {
         'tr_id': None,
         'va_id': None,
         'te_id': None,
+    }
+
+    target_model_hist = {
         'name': None,
-        'train_history_loss': [],
-        'train_history_acc': [],
-        'val_history_loss': [],
-        'val_history_acc': [],
-        'test_history_loss': [],
-        'test_history_acc': [],
+        'tr_loss': [],
+        'tr_perf': [],
+        'va_loss': [],
+        'va_perf': [],
+        'te_loss': [],
+        'te_perf': [],
         'best_test': 0
     }
-    return history
+    
+    att_hist = {
+        'att_loss': [],
+        'att_asr': [],
+        'conv_perf': [],
+        'cert_perf': []
+    }
+
+    return data_hist, target_model_hist, att_hist

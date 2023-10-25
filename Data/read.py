@@ -6,17 +6,16 @@ from Utils.console import console, log_table
 from sklearn.model_selection import train_test_split
 import numpy as np
 
-
 def read_data(args, data_path='datasets/'):
 
     with console.status("Reading data ...") as status:
         # get train and test dataset
-        console.log(f'[bold][green]Reading data')
+
         if args.dataset == 'mnist':
             tr_dataset, te_dataset = get_mnist(path=data_path+args.dataset, size=args.img_size)
             target = tr_dataset.targets
 
-        args.num_label = target.unique().size(dim=0)
+        args.num_class = target.unique().size(dim=0)
         target = target.tolist()
         console.log(f"Finish fetching dataset: [green]{args.dataset}[/green]")
         dataset_size = len(tr_dataset)
@@ -37,14 +36,12 @@ def read_data(args, data_path='datasets/'):
             '# data valid': f"{len(id_va)}",
             '# data test': f"{te_dataset.targets.size(dim=0)}",
             '# features':  f"{image.size()[1:]}",
-            '# labels': f"{args.num_label}",
+            '# labels': f"{args.num_class}",
             'batch size': f"{image.size(dim=0)}"
         }
         log_table(dct=data_dict, name=f"{args.dataset}'s Property")
         console.log(f'[bold][green]Done!')
-
     return tr_loader, va_loader, te_loader
-
 
 def get_mnist(path:str, size:int):
     
