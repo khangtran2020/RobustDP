@@ -89,10 +89,10 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 "Target val/loss": va_loss, 
                 "Target val/acc": va_perf,
             }
-            history['train_history_loss'].append(tr_loss)
-            history['train_history_acc'].append(tr_perf)
-            history['val_history_loss'].append(va_loss)
-            history['val_history_acc'].append(va_perf)
+            history['tr_loss'].append(tr_loss)
+            history['tr_perf'].append(tr_perf)
+            history['va_loss'].append(va_loss)
+            history['va_perf'].append(va_perf)
             es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
             tracker_log(dct=results)
 
