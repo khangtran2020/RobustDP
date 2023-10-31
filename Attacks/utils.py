@@ -38,8 +38,8 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             for i in range(1, num_c):
                 M = (wei[:, 0] - wei[:, i]).norm(p=2, dim=1)
                 rad = (top_k[:,0] - top_k[:,i]).abs().squeeze() / L*M
-                if args.debug:
-                    print(f"# pt {data.size(dim=0)}, size of M: {M.size()}, size of rad: {rad}")
+                # if args.debug:
+                    # print(f"# pt {data.size(dim=0)}, size of M: {M.size()}, size of rad: {rad}")
                 if i == 1:
                     radius = rad.clone()
                 else:
