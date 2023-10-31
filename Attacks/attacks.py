@@ -1,6 +1,8 @@
 import torch
+from Utils.console import console
 
 def fgsm_attack(image:torch.Tensor, rad:torch.Tensor, data_grad:torch.Tensor):
+    console.log("Attacking with FGSM attack")
     batch_size = image.size(dim=0)
     sign_data_grad = data_grad.sign()
     perturbed_image = image + rad.unsqueeze(dim=1).repeat(1, int(image.numel() / batch_size)).view(image.size())*sign_data_grad
@@ -8,7 +10,7 @@ def fgsm_attack(image:torch.Tensor, rad:torch.Tensor, data_grad:torch.Tensor):
     return perturbed_image
 
 def pgd_attack(image:torch.Tensor, label:torch.Tensor, steps:int, model:torch.nn.Module, rad:torch.Tensor, alpha:float, device:torch.device, random:bool=False):
-    
+    console.log("Attacking with PGD attack")
     model.to(device)
     img = image.detach().clone().to(device)
     lab = label.detach().clone().to(device)
