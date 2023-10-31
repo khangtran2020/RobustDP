@@ -20,6 +20,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         correct = 0
         adv_examples = []
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
+        metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         # Loop over all examples in test set
         las_w = model.last_lay.weight.data.clone().detach()
         num_c = args.num_class
@@ -61,6 +62,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             adv_scores = model(adv_data)
             final_pred = adv_scores.max(1, keepdim=True)[1]
             metrics.update(final_pred, init_pred)
+            metrics_tar.update(torch.nn.Softmax(dim=1)(adv_scores), target)
 
             if (i == 0):
                 org_img = data[:num_plot]
@@ -78,9 +80,13 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
         # Calculate final accuracy for this epsilon
         final_acc = metrics.compute().item()
+        certified_acc = metrics_tar.compute().item()
         history['correctness_of_bound'] = final_acc
+        history['certified_acc'] = certified_acc
         console.log(f"Corretness of bound performance: {final_acc}")
+        console.log(f"Certified Accuracy: {certified_acc}")
         wandb.summary[f"Corretness of bound performance"] = f"{final_acc}"
+        wandb.summary[f"Certified Accuracy"] = f"{certified_acc}"
         console.log(f'[bold][green]Done Evaluating robustness: :white_check_mark:')
 
 def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:torch.Tensor, 
