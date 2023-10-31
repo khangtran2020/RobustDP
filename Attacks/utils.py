@@ -48,7 +48,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             init_pred = org_scores.max(1, keepdim=True)[1]
             data_denorm = denorm(data, device=device)
 
-            if args.att_mode.split('-')[0] == 'fsgm':
+            if args.att_mode.split('-')[0] == 'fgsm':
                 loss = torch.nn.CrossEntropyLoss()(org_scores, target)
                 model.zero_grad()
                 loss.backward()
