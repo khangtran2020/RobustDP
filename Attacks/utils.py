@@ -80,6 +80,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         final_acc = metrics.compute().item()
         history['correctness_of_bound'] = final_acc
         console.log(f"Corretness of bound performance: {final_acc}")
+        wandb.summary[f"Corretness of bound performance"] = f"{final_acc}"
         console.log(f'[bold][green]Done Evaluating robustness: :white_check_mark:')
 
 def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:torch.Tensor, 
