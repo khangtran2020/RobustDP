@@ -127,7 +127,7 @@ def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:tor
 
         test_table.add_data(img_id, lab, rad, og_im, og_sc, og_pr, ad_im, ad_sc, ad_pr)
         idx += 1
-    wandb.log({name : test_table})
+    wandb.run.log({name : test_table})
 
 def denorm(batch:torch.Tensor, device:torch.device, mean=[0.1307], std=[0.3081]):
     if isinstance(mean, list):
