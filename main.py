@@ -43,8 +43,7 @@ def run(args, date, device):
         model, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
 
     model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
-    if args.att_mode == 'fgsm-clean':
-        robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=20, history=att_hist)
+    robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=20, history=att_hist)
 
     general_hist = {
         'data': data_hist,
