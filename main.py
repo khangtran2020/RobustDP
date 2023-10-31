@@ -9,7 +9,7 @@ from Models.model import CNN
 from Models.utils import clipping_weight, check_clipped
 from Runs.clean import train, evalt
 from Runs.dpsgd import traindp
-from Attacks.attacks import robust_eval_clean
+from Attacks.utils import robust_eval_clean
 from Utils.utils import print_args, seed_everything, init_history, get_name, save_dict
 from Utils.console import console
 from Utils.tracking import init_tracker
