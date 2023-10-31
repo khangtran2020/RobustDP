@@ -33,16 +33,17 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             if args.att_mode.split('-')[0] == 'fgsm':
                 data.requires_grad = True
             org_scores = model(data)
-            top_k, index = torch.topk(input=org_scores, k=num_c)
-            wei = las_w[index]
+            top_2, _ = torch.topk(input=org_scores, k=2)
+            # wei = las_w[index]
             L = args.clipw ** model.num_trans # lipschitz condition
-            for j in range(1, num_c):
-                M = (wei[:, 0] - wei[:, j]).norm(p=2, dim=1)
-                rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / L*M
-                if j == 1:
-                    radius = rad.clone()
-                else:
-                    radius = torch.min(radius, rad)
+            radius = (top_2[:,0] - top_2[:,1]).abs().squeeze() / L*2
+            # for j in range(1, num_c):
+            #     M = 2
+            #     rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / L*M
+            #     if j == 1:
+            #         radius = rad.clone()
+            #     else:
+            #         radius = torch.min(radius, rad)
 
             init_pred = org_scores.max(1, keepdim=True)[1]
             data_denorm = denorm(data, device=device)
