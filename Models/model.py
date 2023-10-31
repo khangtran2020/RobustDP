@@ -49,7 +49,7 @@ class CNN(nn.Module):
             self.linear_layers.append(nn.Linear(hid_dim[i-1], hid_dim[i]))
             self.num_trans += 1
             self.layer_name.append(f'linr_{i+1}')
-        self.last_lay = nn.Linear(hid_dim[-1], out_dim)
+        self.last_lay = nn.Linear(hid_dim[-1], out_dim, bias=False)
         self.conv_drop = nn.Dropout2d(dropout)
         self.linr_drop = nn.Dropout(dropout)
         self.debug = debug
