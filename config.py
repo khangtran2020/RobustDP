@@ -36,6 +36,7 @@ def add_dp_group(group):
 
 def add_model_attack_group(group):
     group.add_argument("--att_mode", type=str, default='fsgm-clean', help="Attack mode", required=True)
+    group.add_argument("--pgd_steps", type=int, default=50, help='training step for pgd')
 
 def parse_args():
     parser = argparse.ArgumentParser()
