@@ -29,7 +29,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
             data, target = batch
             data, target = data.to(device), target.to(device)
-            if args.att_mode.split('-')[0] == 'fsgm':
+            if args.att_mode.split('-')[0] == 'fgsm':
                 data.requires_grad = True
             org_scores = model(data)
             top_k, index = torch.topk(input=org_scores, k=num_c)
