@@ -36,6 +36,7 @@ def pgd_attack(image:torch.Tensor, label:torch.Tensor, steps:int, model:torch.nn
         adv = adv.detach() + alpha * grad.sign()
         delta = adv - img
         delta = delta * torch.clamp(rad / (torch.flatten(delta, start_dim=1).norm(p=2, dim=1) + 1e-12), max=1.0).unsqueeze(dim=1).repeat(1, int(img.numel() / bsz)).view(img.size())
+        print(torch.flatten(delta, start_dim=1).norm(p=2, dim=1) < rad)
         adv = torch.clamp(img + delta, min=0, max=1).detach()
 
     return adv
