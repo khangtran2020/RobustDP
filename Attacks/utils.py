@@ -125,6 +125,7 @@ def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:tor
         ad_sc = draw_score(score=log_adv_scr[i])
         ad_pr = log_adv_prd[i]
 
+        print(og_sc.shape, ad_sc.shape)
         test_table.add_data(img_id, lab, rad, og_im, og_sc, og_pr, ad_im, ad_sc, ad_pr)
         idx += 1
     wandb.run.log({name: test_table})   
