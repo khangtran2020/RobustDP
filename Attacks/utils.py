@@ -74,7 +74,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 rads = radius[:num_plot]
 
                 print(f"Logging test prediction")
-                log_test_predictions(org_imgs=org_img, org_scr=org_scr, org_prd=org_prd, adv_img=adv_img, adv_scr=adv_scr, 
+                log_test_predictions(org_img=org_img, org_scr=org_scr, org_prd=org_prd, adv_img=adv_img, adv_scr=adv_scr, 
                                      adv_prd=adv_prd,labels=labels, radius=rads, name=f"Predictions under {args.att_mode.split('-')[0]} attack")
 
         # Calculate final accuracy for this epsilon
