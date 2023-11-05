@@ -88,15 +88,10 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         pred = pred_fn(pred)
                         metrics.update(pred, target)
                         loss.backward()
-                        console.log(vars(optimizer))
+                        opt_s1 = optimizer._step_skip_queue
                         optimizer.step()
-                        grad_norm = 0
-                        # for n, p in model.named_parameters():
-                        #     if p.summed_grad is not None:
-                        #         grad_norm += p.grad.detach().norm(p=2)**2
-                        # console.log(f"grad norm: {grad_norm.sqrt().item()}")
-                        # if grad_norm.sqrt().item() < 1e-5:
-                        #     counter += 1
+                        opt_s2 = optimizer._step_skip_queue
+                        console.log(f"step {bi}: state 1 {opt_s1}, state 2 {opt_s2}")
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
