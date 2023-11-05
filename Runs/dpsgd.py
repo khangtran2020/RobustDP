@@ -88,16 +88,12 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         pred = pred_fn(pred)
                         metrics.update(pred, target)
                         loss.backward()
-                        opt_s1 = deepcopy(optimizer._step_skip_queue)
                         optimizer._step_skip_queue = [False]
-                        opt_s2 = deepcopy(optimizer._step_skip_queue)
-                        console.log(f"step {bi}: state 1 {opt_s1}, state 2 {opt_s2}")
                         optimizer.step()
                         model_list.append(deepcopy(model))
                     else:
                         optimizer.zero_grad()
                         data, target = d
-                        # console.log(f"# data in 1 batch: {data.size(dim=0)}")
                         data = data.to(device)
                         target = target.to(device)
                         pred = model(data)
@@ -107,9 +103,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         loss.backward()
                         opt_s1 = deepcopy(optimizer._step_skip_queue)
                         optimizer.step()
-                        # console.log(f"step {bi}: state 1 {opt_s1}, size of data {data.size(dim=0)}")
-                        if opt_s1[0] == False:
-                            counter += 1
+                        if opt_s1[0] == False: counter += 1
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
@@ -117,28 +111,35 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
             metrics.reset()   
+           
 
             va_loss = 0
             nva = 0
 
             # validation
-            model.eval()
-            with torch.no_grad():
-                for bi, d in enumerate(va_loader):
-                    data, target = d
-                    data = data.to(device)
-                    target = target.to(device)
-                    pred = model(data)
-                    loss = objective(pred, target)
-                    pred = pred_fn(pred)
-                    metrics.update(pred, target)
-                    va_loss += loss.item()*pred.size(dim=0)
-                    nva += pred.size(dim=0)
-                    progress.advance(tk_ev)
+            if (epoch == args.epochs - 1):
+                console.log(f"# of model: {len(model_list)}")
+                for i, m in enumerate(model_list):
+                    torch.save(m.state_dict(), args.model_path + f"model_{i}_{model_name}")
+            else:
+                model.eval()
+                with torch.no_grad():
+                    for bi, d in enumerate(va_loader):
+                        data, target = d
+                        data = data.to(device)
+                        target = target.to(device)
+                        pred = model(data)
+                        loss = objective(pred, target)
+                        pred = pred_fn(pred)
+                        metrics.update(pred, target)
+                        va_loss += loss.item()*pred.size(dim=0)
+                        nva += pred.size(dim=0)
+                        progress.advance(tk_ev)
 
-            va_loss = va_loss / nva 
-            va_perf = metrics.compute().item()
-            metrics.reset()
+                va_loss = va_loss / nva 
+                va_perf = metrics.compute().item()
+                metrics.reset()
+                torch.save(model.state_dict(), args.model_path + model_name)
 
             results = {
                 "Target epoch": epoch+1,
@@ -152,7 +153,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             history['va_loss'].append(va_loss)
             history['va_perf'].append(va_perf)
             # es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
-            torch.save(model.state_dict(), args.model_path + model_name)
             tracker_log(dct=results)
 
             progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}") 
