@@ -1,5 +1,6 @@
 import torch
 import torchmetrics
+from copy import deepcopy
 from rich.progress import Progress
 from typing import Dict
 from Models.modules import EarlyStopping
@@ -13,6 +14,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     
     model_name = '{}.pt'.format(name)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    lay_out_size = deepcopy(model.lay_out_size)
 
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss().to(device)
@@ -42,6 +44,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
         max_grad_norm=args.clip,
     )
 
+    # model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
+
     console.log(f"Using sigma={optimizer.noise_multiplier} and C={args.clip}")
 
     es = EarlyStopping(patience=15, mode='max', verbose=False)
@@ -59,28 +63,40 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             ntr = 0
             num_step = len(tr_loader)
 
+            counter = 0
             # train
             model.train()
+            max_bs = args.max_bs if (epoch < args.epochs - 1) else int(args.bs / args.num_mo)
             with BatchMemoryManager(
                     data_loader=tr_loader, 
-                    max_physical_batch_size=args.max_bs, 
+                    max_physical_batch_size=max_bs, 
                     optimizer=optimizer
                 ) as memory_safe_data_loader:
                 for bi, d in enumerate(memory_safe_data_loader):
-                    model.zero_grad()
-                    optimizer.zero_grad()
-                    data, target = d
-                    pred = model(data)
-                    loss = objective(pred, target)
-                    pred = pred_fn(pred)
-                    metrics.update(pred, target)
-                    loss.backward()
-                    optimizer.step()
-                    model = clipping_weight(model=model, clip=args.clipw)
+                    model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
+                    if (epoch == args.epochs - 1) & (bi == len(memory_safe_data_loader) - 1):
+                        pass
+                    else:
+                        model.zero_grad()
+                        optimizer.zero_grad()
+                        data, target = d
+                        # console.log(f"# data in 1 batch: {data.size(dim=0)}")
+                        pred = model(data)
+                        loss = objective(pred, target)
+                        pred = pred_fn(pred)
+                        metrics.update(pred, target)
+                        loss.backward()
+                        optimizer.step()
+                        grad_norm = 0
+                        for n, p in model.named_parameters():
+                            if p.summed_grad is not None:
+                                grad_norm += p.summed_grad.detach().norm(p=2)**2
+                        if grad_norm.sqrt().item() > 1e-12:
+                            counter += 1
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
-
+            console.log(f"Counter: {counter}")
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
             metrics.reset()   
