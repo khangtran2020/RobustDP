@@ -47,12 +47,14 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     # model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
 
     console.log(f"Using sigma={optimizer.noise_multiplier} and C={args.clip}")
+    model_list = []
 
-    es = EarlyStopping(patience=15, mode='max', verbose=False)
+    # es = EarlyStopping(patience=15, mode='max', verbose=False)
 
     with Progress(console=console) as progress:
 
         tk_tr = progress.add_task("[red]Training...", total=args.epochs)
+        tk_up = progress.add_task("[green]Updating...", total=len(tr_loader))
         tk_ev = progress.add_task("[cyan]Evaluating...", total=len(va_loader))
 
         # progress.reset(task_id=task1)
@@ -65,17 +67,15 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             counter = 0
             # train
             model.train()
-            max_bs = args.max_bs if (epoch < args.epochs - 1) else int(args.bs / args.num_mo)
+            max_bs = args.max_bs if (epoch < args.epochs - 1) else args.bs / args.num_mo
             with BatchMemoryManager(
                     data_loader=tr_loader, 
                     max_physical_batch_size=max_bs, 
                     optimizer=optimizer
                 ) as memory_safe_data_loader:
-                tk_up = progress.add_task("[green]Updating...", total=len(memory_safe_data_loader))
-                console.log(f"Len of actual loader: {len(tr_loader)}. Len of safe loader: {len(memory_safe_data_loader)}")
                 for bi, d in enumerate(memory_safe_data_loader):
                     model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
-                    if (epoch == args.epochs - 1) & (bi == len(memory_safe_data_loader) - 1):
+                    if (epoch == args.epochs - 1) & (counter == len(tr_loader) - 1):
                         pass
                     else:
                         model.zero_grad()
@@ -91,8 +91,9 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         loss.backward()
                         opt_s1 = deepcopy(optimizer._step_skip_queue)
                         optimizer.step()
-                        console.log(f"step {bi}: state 1 {opt_s1}, size of data {data.size(dim=0)}")
-                        if opt_s1[0] == False: counter += 1
+                        # console.log(f"step {bi}: state 1 {opt_s1}, size of data {data.size(dim=0)}")
+                        if opt_s1[0] == False:
+                            counter += 1
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
@@ -134,7 +135,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             history['tr_perf'].append(tr_perf)
             history['va_loss'].append(va_loss)
             history['va_perf'].append(va_perf)
-            es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
+            # es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
+            torch.save(model.state_dict(), args.model_path + model_name)
             tracker_log(dct=results)
 
             progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}") 
