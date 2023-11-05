@@ -81,6 +81,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         optimizer.zero_grad()
                         data, target = d
                         # console.log(f"# data in 1 batch: {data.size(dim=0)}")
+                        data = data.to(device)
+                        target = target.to(device)
                         pred = model(data)
                         loss = objective(pred, target)
                         pred = pred_fn(pred)
