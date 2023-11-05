@@ -91,7 +91,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         for n, p in model.named_parameters():
                             if p.summed_grad is not None:
                                 grad_norm += p.summed_grad.detach().norm(p=2)**2
-                        if grad_norm.sqrt().item() > 1e-12:
+                        if grad_norm.sqrt().item() < 1e-5:
                             counter += 1
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
