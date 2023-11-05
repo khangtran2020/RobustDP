@@ -90,7 +90,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         loss.backward()
                         opt_s1 = deepcopy(optimizer._step_skip_queue)
                         optimizer.step()
-                        console.log(f"step {bi}: state 1 {opt_s1}, size of data {data.size(dim=0)}")
+                        # console.log(f"step {bi}: state 1 {opt_s1}, size of data {data.size(dim=0)}")
+                        if opt_s1[0] == False: counter += 1
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
