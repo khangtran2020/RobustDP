@@ -73,6 +73,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     optimizer=optimizer
                 ) as memory_safe_data_loader:
                 for bi, d in enumerate(memory_safe_data_loader):
+                    console.log(f"Len of actual loader: {len(tr_loader)}. Len of safe loader: {len(memory_safe_data_loader)}")
                     model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
                     if (epoch == args.epochs - 1) & (bi == len(memory_safe_data_loader) - 1):
                         pass
