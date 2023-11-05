@@ -51,28 +51,27 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     es = EarlyStopping(patience=15, mode='max', verbose=False)
 
     with Progress(console=console) as progress:
-        
-        with BatchMemoryManager(
+
+        tk_tr = progress.add_task("[red]Training...", total=args.epochs)
+        tk_ev = progress.add_task("[cyan]Evaluating...", total=len(va_loader))
+
+        # progress.reset(task_id=task1)
+        for epoch in range(args.epochs):
+
+            tr_loss = 0
+            ntr = 0
+            num_step = len(tr_loader)
+
+            counter = 0
+            # train
+            model.train()
+            max_bs = args.max_bs if (epoch < args.epochs - 1) else int(args.bs / args.num_mo)
+            with BatchMemoryManager(
                     data_loader=tr_loader, 
                     max_physical_batch_size=max_bs, 
                     optimizer=optimizer
                 ) as memory_safe_data_loader:
-            tk_tr = progress.add_task("[red]Training...", total=args.epochs)
-            tk_up = progress.add_task("[green]Updating...", total=len(memory_safe_data_loader))
-            tk_ev = progress.add_task("[cyan]Evaluating...", total=len(va_loader))
-
-            # progress.reset(task_id=task1)
-            for epoch in range(args.epochs):
-
-                tr_loss = 0
-                ntr = 0
-                num_step = len(tr_loader)
-
-                counter = 0
-                # train
-                model.train()
-                max_bs = args.max_bs if (epoch < args.epochs - 1) else int(args.bs / args.num_mo)
-                
+                tk_up = progress.add_task("[green]Updating...", total=len(tr_loader))
                 console.log(f"Len of actual loader: {len(tr_loader)}. Len of safe loader: {len(memory_safe_data_loader)}")
                 for bi, d in enumerate(memory_safe_data_loader):
                     model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
@@ -97,51 +96,51 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
-                console.log(f"Counter: {counter}")
-                tr_loss = tr_loss / ntr 
-                tr_perf = metrics.compute().item()
-                metrics.reset()   
+            console.log(f"Counter: {counter}")
+            tr_loss = tr_loss / ntr 
+            tr_perf = metrics.compute().item()
+            metrics.reset()   
 
-                va_loss = 0
-                nva = 0
+            va_loss = 0
+            nva = 0
 
-                # validation
-                model.eval()
-                with torch.no_grad():
-                    for bi, d in enumerate(va_loader):
-                        data, target = d
-                        data = data.to(device)
-                        target = target.to(device)
-                        pred = model(data)
-                        loss = objective(pred, target)
-                        pred = pred_fn(pred)
-                        metrics.update(pred, target)
-                        va_loss += loss.item()*pred.size(dim=0)
-                        nva += pred.size(dim=0)
-                        progress.advance(tk_ev)
+            # validation
+            model.eval()
+            with torch.no_grad():
+                for bi, d in enumerate(va_loader):
+                    data, target = d
+                    data = data.to(device)
+                    target = target.to(device)
+                    pred = model(data)
+                    loss = objective(pred, target)
+                    pred = pred_fn(pred)
+                    metrics.update(pred, target)
+                    va_loss += loss.item()*pred.size(dim=0)
+                    nva += pred.size(dim=0)
+                    progress.advance(tk_ev)
 
-                va_loss = va_loss / nva 
-                va_perf = metrics.compute().item()
-                metrics.reset()
+            va_loss = va_loss / nva 
+            va_perf = metrics.compute().item()
+            metrics.reset()
 
-                results = {
-                    "Target epoch": epoch+1,
-                    "Target train/loss": tr_loss, 
-                    "Target train/acc": tr_perf, 
-                    "Target val/loss": va_loss, 
-                    "Target val/acc": va_perf,
-                }
-                history['tr_loss'].append(tr_loss)
-                history['tr_perf'].append(tr_perf)
-                history['va_loss'].append(va_loss)
-                history['va_perf'].append(va_perf)
-                es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
-                tracker_log(dct=results)
+            results = {
+                "Target epoch": epoch+1,
+                "Target train/loss": tr_loss, 
+                "Target train/acc": tr_perf, 
+                "Target val/loss": va_loss, 
+                "Target val/acc": va_perf,
+            }
+            history['tr_loss'].append(tr_loss)
+            history['tr_perf'].append(tr_perf)
+            history['va_loss'].append(va_loss)
+            history['va_perf'].append(va_perf)
+            es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
+            tracker_log(dct=results)
 
-                progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}") 
-                progress.advance(tk_tr)
-                progress.reset(tk_up)
-                progress.reset(tk_ev)
+            progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}") 
+            progress.advance(tk_tr)
+            progress.reset(tk_up)
+            progress.reset(tk_ev)
         console.log(f"Done Training target model: :white_check_mark:")
     model.load_state_dict(torch.load(args.model_path + model_name))
     return model, history
