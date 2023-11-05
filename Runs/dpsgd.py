@@ -65,6 +65,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             num_step = len(tr_loader)
 
             counter = 0
+            num_model = 0
             # train
             model.train()
             max_bs = args.max_bs if (epoch < args.epochs - 1) else args.bs / args.num_mo
@@ -77,13 +78,26 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
                     if (epoch == args.epochs - 1) & (counter == len(tr_loader) - 1):
                         # model.zero_grad()
+                        model.load_state_dict(torch.load(args.model_path + model_name))
                         optimizer.zero_grad()
                         data, target = d
-                        console.log(f"# data in 1 batch: {data.size(dim=0)}")
+                        data = data.to(device)
+                        target = target.to(device)
+                        pred = model(data)
+                        loss = objective(pred, target)
+                        pred = pred_fn(pred)
+                        metrics.update(pred, target)
+                        loss.backward()
+                        opt_s1 = deepcopy(optimizer._step_skip_queue)
+                        optimizer._step_skip_queue = [False]
+                        opt_s2 = deepcopy(optimizer._step_skip_queue)
+                        console.log(f"step {bi}: state 1 {opt_s1}, state 2 {opt_s2}")
+                        optimizer.step()
+                        model_list.append(deepcopy(model))
                     else:
                         optimizer.zero_grad()
                         data, target = d
-                        console.log(f"# data in 1 batch: {data.size(dim=0)}")
+                        # console.log(f"# data in 1 batch: {data.size(dim=0)}")
                         data = data.to(device)
                         target = target.to(device)
                         pred = model(data)
