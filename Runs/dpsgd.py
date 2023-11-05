@@ -76,12 +76,14 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 for bi, d in enumerate(memory_safe_data_loader):
                     model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
                     if (epoch == args.epochs - 1) & (counter == len(tr_loader) - 1):
-                        pass
-                    else:
-                        model.zero_grad()
+                        # model.zero_grad()
                         optimizer.zero_grad()
                         data, target = d
-                        # console.log(f"# data in 1 batch: {data.size(dim=0)}")
+                        console.log(f"# data in 1 batch: {data.size(dim=0)}")
+                    else:
+                        optimizer.zero_grad()
+                        data, target = d
+                        console.log(f"# data in 1 batch: {data.size(dim=0)}")
                         data = data.to(device)
                         target = target.to(device)
                         pred = model(data)
