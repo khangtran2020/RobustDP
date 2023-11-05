@@ -4,6 +4,7 @@ import torch
 import datetime
 import warnings
 from config import parse_args
+from rich.pretty import pretty_repr
 from Data.read import read_data
 from Models.model import CNN
 from Models.utils import clipping_weight, check_clipped
@@ -24,6 +25,8 @@ def run(args, date, device):
     model = CNN(channel=[32, 32, 64], hid_dim=[256], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=5, debug=args.debug)
     model = clipping_weight(model=model, clip=args.clipw)
     if args.debug > 0:
+        print(model)
+        print(pretty_repr(model.lay_out_size))
         checked = check_clipped(model=model, clip=args.clipw)
         
     if args.debug > 0:

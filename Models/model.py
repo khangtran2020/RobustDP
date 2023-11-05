@@ -10,6 +10,7 @@ class CNN(nn.Module):
 
         # general
         self.layer_name = []
+        self.lay_out_size = {}
         self.inter_act = nn.ReLU()
         if debug:
             self.img_slist = []
@@ -19,17 +20,27 @@ class CNN(nn.Module):
         if debug:
             self.img_slist.append(img_s)
         self.cnn_layers = nn.ModuleList()
+
         self.cnn_layers.append(nn.Conv2d(channel_in, channel[0], kernel_size=kernal_size, padding=padding, stride=stride))
         img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
         self.num_trans = 1
         if debug:
             self.img_slist.append(img_s)
         self.layer_name.append('conv_1')
+        self.lay_out_size['conv_1'] = img_s*img_s*channel[0]
+
+        self.cnn_layers.append(nn.MaxPool2d(2))
+        self.layer_name.append(f'pool_1')
+        img_s = int((img_s + 2*padding - 1*(2 - 1) - 1) / 2 + 1)
+        if debug:
+            self.img_slist.append(img_s)
+
         for i in range(1, len(channel)):
             self.cnn_layers.append(nn.Conv2d(channel[i-1], channel[i], kernel_size=kernal_size, padding=padding, stride=stride))
             self.num_trans += 1
             self.layer_name.append(f'conv_{i+1}')
             img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
+            self.lay_out_size[f'conv_{i+1}'] = img_s*img_s*channel[0]
             if debug:
                 self.img_slist.append(img_s)
             self.cnn_layers.append(nn.MaxPool2d(2))
