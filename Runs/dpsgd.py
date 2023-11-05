@@ -111,6 +111,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             with torch.no_grad():
                 for bi, d in enumerate(va_loader):
                     data, target = d
+                    data = data.to(device)
+                    target = target.to(device)
                     pred = model(data)
                     loss = objective(pred, target)
                     pred = pred_fn(pred)
