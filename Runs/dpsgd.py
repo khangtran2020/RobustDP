@@ -92,7 +92,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         grad_norm = 0
                         for n, p in model.named_parameters():
                             if p.summed_grad is not None:
-                                grad_norm += p.summed_grad.detach().norm(p=2)**2
+                                grad_norm += p.grad.detach().norm(p=2)**2
                         console.log(f"grad norm: {grad_norm.sqrt().item()}")
                         if grad_norm.sqrt().item() < 1e-5:
                             counter += 1
