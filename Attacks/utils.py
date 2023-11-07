@@ -8,9 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 import torch.nn.functional as F
+from typing import Dict
 from PIL import Image
 from Attacks.attacks import fgsm_attack, pgd_attack
-from typing import Dict
+from Models.utils import check_clipped
 from Utils.console import console
 
 def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
@@ -24,6 +25,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         # Loop over all examples in test set
         las_w = model.last_lay.weight.data.clone().detach()
         print(f"Norm weight of the last layer: {las_w.norm(p=2)}, with size {las_w.size()}")
+        check_clipped(model=model, clip=1.0)
         num_c = args.num_class
 
         pred = torch.Tensor([]).to(device)
