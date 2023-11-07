@@ -34,9 +34,6 @@ def run(args, date, device):
         checked = check_clipped(model=model, clip=args.clipw)
 
         console.log(model.last_lay.weight.data)
-        sys.exit()
-        
-    if args.debug > 0:
         with console.status("Testing comparable of considered model") as status:
             console.log(f"Model: {model}")
             for n, p in model.named_parameters():
