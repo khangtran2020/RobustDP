@@ -63,6 +63,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
             elif args.att_mode.split('-')[0] == 'pgd':
                 adv_data = pgd_attack(image=data_denorm, label=target, steps=args.pgd_steps, model=model, rad=radius, alpha=2/255, device=device)
+                adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
 
             adv_scores = model(adv_data)
             final_pred = adv_scores.max(1, keepdim=True)[1]
