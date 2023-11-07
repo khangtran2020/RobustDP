@@ -24,6 +24,9 @@ def run(args, date, device):
     tr_loader, va_loader, te_loader = read_data(args=args)
     model = CNN(channel=[32, 64], hid_dim=[256, 64], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=5, debug=args.debug)
     
+    for n, p in model.named_parameters():
+        print(f"Layer {n}: {p.size()}")
+
     if args.debug > 0:
         print(model)
         model = clipping_weight(model=model, clip=args.clipw, mode='clean', lay_out_size=None)

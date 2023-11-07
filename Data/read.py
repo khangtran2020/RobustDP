@@ -14,6 +14,9 @@ def read_data(args, data_path='datasets/'):
         if args.data == 'mnist':
             tr_dataset, te_dataset = get_mnist(path=data_path+args.data, size=args.img_sz)
             target = tr_dataset.targets
+        elif args.data == 'cifar10':
+            tr_dataset, te_dataset = get_cifar(path=data_path+args.data, size=args.img_sz)
+            target = tr_dataset.targets
 
         args.num_class = target.unique().size(dim=0)
         target = target.tolist()
@@ -63,3 +66,20 @@ def get_mnist(path:str, size:int):
                                                 )
     
     return train_dataset, test_dataset
+
+def get_cifar(path:str, size:int):
+
+    CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
+    CIFAR10_STD_DEV = (0.2023, 0.1994, 0.2010)
+
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD_DEV),
+        transforms.Resize(size=size)
+    ])
+
+    tr_dataset = torchvision.datasets.CIFAR10(root=path, train=True, download=True, transform=transform)
+
+    te_dataset = torchvision.datasets.CIFAR10(root=path, train=False, download=True, transform=transform)
+
+    return tr_dataset, te_dataset
