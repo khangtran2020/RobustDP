@@ -37,9 +37,10 @@ def pgd_attack(image:torch.Tensor, label:torch.Tensor, steps:int, model:torch.nn
         delta = adv - img
         weight = rad / (torch.flatten(delta, start_dim=1).norm(p=2, dim=1) + 1e-12)
         weight = torch.min(torch.ones_like(weight), weight)
-        console.log(f"weight: max {weight.max()}, min {weight.min()}, with size: {weight.size()}")
         for j in range(delta.size(dim=0)):
             delta[j] = delta[j] * weight[j]
+        delta_norm = torch.flatten(delta, start_dim=1).norm(p=2, dim=1)
+        console.log(f"weight: max {delta_norm.max()}, min {delta_norm.min()}, with size: {delta_norm.size()}")
         adv = torch.clamp(img + delta, min=0, max=1).detach()
 
     return adv
