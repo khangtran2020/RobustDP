@@ -37,7 +37,7 @@ def read_data(args, data_path='datasets/'):
         data_dict = {
             '# data train': f"{len(id_tr)}",
             '# data valid': f"{len(id_va)}",
-            '# data test': f"{te_dataset.targets.size(dim=0)}",
+            '# data test': f"{torch.Tensor(te_dataset.targets).size(dim=0)}",
             '# features':  f"{image.size()[1:]}",
             '# labels': f"{args.num_class}",
             'batch size': f"{image.size(dim=0)}"
