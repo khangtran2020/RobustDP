@@ -26,11 +26,13 @@ def run(args, date, device):
     
     if args.debug > 0:
         for n, p in model.named_parameters():
-            print(f"Layer {n}: {p.size()}")
+            console.log(f"Layer {n}: {p.size()}")
 
-        print(model)
-        model = clipping_weight(model=model, clip=args.clipw, mode='clean', lay_out_size=None)
-        checked = check_clipped(model=model, clip=args.clipw, mode='clean', lay_out_size=None)
+        console.log(model)
+        model = clipping_weight(model=model, clip=args.clipw)
+        checked = check_clipped(model=model, clip=args.clipw)
+
+        console.log(model.last_lay.weight.data)
         sys.exit()
         
     if args.debug > 0:
