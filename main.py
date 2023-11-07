@@ -7,7 +7,7 @@ from config import parse_args
 from rich.pretty import pretty_repr
 from Data.read import read_data
 from Models.model import CNN
-from Models.utils import clipping_weight, check_clipped
+from Models.utils import lip_clip, clip_weight, check_clipped
 from Runs.clean import train, evalt
 from Runs.dpsgd import traindp
 from Attacks.utils import robust_eval_clean
@@ -29,7 +29,8 @@ def run(args, date, device):
             console.log(f"Layer {n}: {p.size()}")
 
         console.log(model)
-        model = clipping_weight(model=model, clip=args.clipw)
+        model = lip_clip(model=model, clip=args.clipw)
+        model = clip_weight(model=model, clip=args.clipw)
         checked = check_clipped(model=model, clip=args.clipw)
 
         console.log(model.last_lay.weight.data)
