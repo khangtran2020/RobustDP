@@ -34,17 +34,15 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             if args.att_mode.split('-')[0] == 'fgsm':
                 data.requires_grad = True
             org_scores = model(data)
-            top_2, _ = torch.topk(input=org_scores, k=2)
-            # wei = las_w[index]
-            L = args.clipw ** model.num_trans # lipschitz condition
-            radius = (top_2[:,0] - top_2[:,1]).abs().squeeze() / L*2
-            # for j in range(1, num_c):
-            #     M = 2
-            #     rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / L*M
-            #     if j == 1:
-            #         radius = rad.clone()
-            #     else:
-            #         radius = torch.min(radius, rad)
+            top_k, idx = torch.topk(input=org_scores, k=num_c)
+            wei = las_w[idx]
+            for j in range(1, num_c):
+                M = (wei[0] - wei[j]).norm(p=2)
+                rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / M
+                if j == 1:
+                    radius = rad.clone()
+                else:
+                    radius = torch.min(radius, rad)
 
             init_pred = org_scores.max(1, keepdim=True)[1]
             data_denorm = denorm(data, device=device)
@@ -77,7 +75,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
                 print(f"Logging test prediction")
                 log_test_predictions(org_img=org_img, org_scr=org_scr, org_prd=org_prd, adv_img=adv_img, adv_scr=adv_scr, 
-                                     adv_prd=adv_prd,labels=labels, radius=rads, name=f"Predictions under {args.att_mode.split('-')[0]} attack")
+                                     adv_prd=adv_prd,labels=labels, radius=rads, name=f"Predictions under {args.att_mode.split('-')[0]} attack", num_class=args.num_class)
 
         # Calculate final accuracy for this epsilon
         final_acc = metrics.compute().item()
@@ -92,7 +90,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
 def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:torch.Tensor, 
                          adv_img:torch.Tensor, adv_scr:torch.Tensor, adv_prd:torch.Tensor,
-                         labels:torch.Tensor, radius:torch.Tensor, name:str):
+                         labels:torch.Tensor, radius:torch.Tensor, name:str, num_class:int):
 
     columns=["id", "label", "radius", "original image", "original score", "original prediction", "adversarial image", "adversarial score", "adversarial prediction"]
     test_table = wandb.Table(columns=columns)
@@ -118,11 +116,11 @@ def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:tor
         rad = log_rad[i]
 
         og_im = wandb.Image(log_org_img[i])
-        og_sc = wandb.Image(draw_score(score=log_org_scr[i]))
+        og_sc = wandb.Image(draw_score(score=log_org_scr[i], num_lab=num_class))
         og_pr = log_org_prd[i]
 
         ad_im = wandb.Image(log_adv_img[i])
-        ad_sc = wandb.Image(draw_score(score=log_adv_scr[i]))
+        ad_sc = wandb.Image(draw_score(score=log_adv_scr[i], num_lab=num_class))
         ad_pr = log_adv_prd[i]
 
         # print(og_sc.shape, ad_sc.shape)
