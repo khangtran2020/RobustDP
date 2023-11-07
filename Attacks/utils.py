@@ -42,7 +42,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             for j in range(1, num_c):
                 M = (wei[:, 0, :] - wei[:, j, :]).norm(p=2, dim=1)
                 rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / M
-                console.log(f"weight diff size: {M.size()}, score diff size: {(top_k[:,0] - top_k[:,j]).size()}")
+                # console.log(f"weight diff size: {M.size()}, score diff size: {(top_k[:,0] - top_k[:,j]).size()}")
                 if j == 1:
                     radius = rad.clone()
                 else:
@@ -66,7 +66,10 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             metrics.update(final_pred, init_pred)
             metrics_tar.update(torch.nn.Softmax(dim=1)(adv_scores), target)
 
-            console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
+            # console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
+            crad = torch.cat((crad, radius), dim=0)
+            pred = torch.cat((pred, init_pred.squeeze()), dim=0)
+            gtar = torch.cat((gtar, target), dim=0)
 
             if (i == 0):
                 org_img = data[:num_plot]
@@ -84,6 +87,8 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                                      adv_prd=adv_prd,labels=labels, radius=rads, name=f"Predictions under {args.att_mode.split('-')[0]} attack", num_class=args.num_class)
 
         # Calculate final accuracy for this epsilon
+        console.log(f"Radius size: {crad.size()}, init pred size: {pred.size()}, target size: {gtar.size()}")
+
         final_acc = metrics.compute().item()
         certified_acc = metrics_tar.compute().item()
         history['correctness_of_bound'] = final_acc
