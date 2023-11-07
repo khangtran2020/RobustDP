@@ -19,13 +19,13 @@ def lip_clip(model:torch.nn.Module, clip:float):
                     norm = k * min([norm_1, norm_2, norm_3, norm_4])
                 else:
                     norm = p.norm(p=2)
-                p.data = p.data * min(1, clip / (norm + 1e-12))
+                p.data = p.data / (norm + 1e-12)
 
     return model
 
 def clip_weight(model:torch.nn.Module, clip:float):
     norm = model.last_lay.weight.data.norm(p=2)
-    model.last_lay.weight.data = model.last_lay.weight.data * min(1, clip / (norm + 1e-12))
+    model.last_lay.weight.data = model.last_lay.weight.data / (norm + 1e-12)
     return model
 
 def check_clipped(model:torch.nn.Module, clip:float):
