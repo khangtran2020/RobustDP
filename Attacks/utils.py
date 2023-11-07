@@ -66,7 +66,10 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
             elif args.att_mode.split('-')[0] == 'pgd':
                 adv_data = pgd_attack(image=data_denorm, label=target, steps=args.pgd_steps, model=model, rad=radius, alpha=2/255, device=device)
-                adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
+                if args.data == 'mnist':
+                    adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
+                elif args.data == 'cifar10':
+                    adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
 
             adv_scores = model(adv_data)
             final_pred = adv_scores.max(1, keepdim=True)[1]
