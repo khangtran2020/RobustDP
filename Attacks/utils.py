@@ -52,7 +52,10 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                     radius = torch.min(radius, rad)
 
             init_pred = org_scores.max(1, keepdim=True)[1]
-            data_denorm = denorm(data, device=device)
+            if args.data == 'mnist':
+                data_denorm = denorm(data, device=device)
+            elif args.data == 'cifar10':
+                data_denorm = denorm(data, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
 
             if args.att_mode.split('-')[0] == 'fgsm':
                 loss = torch.nn.CrossEntropyLoss()(org_scores, target)
@@ -63,7 +66,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
             elif args.att_mode.split('-')[0] == 'pgd':
                 adv_data = pgd_attack(image=data_denorm, label=target, steps=args.pgd_steps, model=model, rad=radius, alpha=2/255, device=device)
-                adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
+                adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
 
             adv_scores = model(adv_data)
             final_pred = adv_scores.max(1, keepdim=True)[1]
@@ -76,13 +79,25 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             gtar = torch.cat((gtar, target), dim=0)
 
             if (i == 0):
-                org_img = data[:num_plot]
-                org_scr = org_scores[:num_plot]
-                org_prd = init_pred[:num_plot]
 
-                adv_img = adv_data[:num_plot]
-                adv_scr = adv_scores[:num_plot]
-                adv_prd = final_pred[:num_plot]
+                if args.data == 'mnist':
+                    org_img = data[:num_plot]
+                    org_scr = org_scores[:num_plot]
+                    org_prd = init_pred[:num_plot]
+
+                    adv_img = adv_data[:num_plot]
+                    adv_scr = adv_scores[:num_plot]
+                    adv_prd = final_pred[:num_plot]
+                elif args.data == 'cifar10':
+                    org_img = data[:num_plot]
+                    org_img = org_img.view((org_img.size(dim=0), org_img.size(dim=2), org_img.size(dim=3), org_img.size(dim=1)))
+                    org_scr = org_scores[:num_plot]
+                    org_prd = init_pred[:num_plot]
+
+                    adv_img = adv_data[:num_plot]
+                    adv_img = adv_img.view((adv_img.size(dim=0), adv_img.size(dim=2), adv_img.size(dim=3), adv_img.size(dim=1)))
+                    adv_scr = adv_scores[:num_plot]
+                    adv_prd = final_pred[:num_plot]
                 labels = target[:num_plot]
                 rads = radius[:num_plot]
 
