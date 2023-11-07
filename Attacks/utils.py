@@ -1,4 +1,5 @@
 import os
+import math
 import random
 import string
 import torch
@@ -43,7 +44,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             # console.log(f"weight diff size: {wei.size()}, since the idx has size: {idx.size}")
             for j in range(1, num_c):
                 M = (wei[:, 0, :] - wei[:, j, :]).norm(p=2, dim=1)
-                rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / M
+                rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / (M * math.sqrt(2))
                 # console.log(f"weight diff size: {M.size()}, score diff size: {(top_k[:,0] - top_k[:,j]).size()}")
                 if j == 1:
                     radius = rad.clone()
