@@ -37,7 +37,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 data.requires_grad = True
             org_scores = model(data)
             top_k, idx = torch.topk(input=org_scores, k=num_c)
-            wei = las_w[idx]
+            wei = las_w[idx, :]
             console.log(f"weight diff size: {wei.size()}")
             for j in range(1, num_c):
                 console.log(f"weight diff size: {(wei[0] - wei[j]).size()}")
