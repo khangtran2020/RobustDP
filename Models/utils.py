@@ -39,7 +39,7 @@ def check_clipped(model:torch.nn.Module, clip:float, mode:str='clean', lay_out_s
                     norm_3 = p.detach().view(int(c0), int(c1*k*k)).norm(p=2).item()
                     norm_4 = p.detach().view(int(c0*k*k), int(c1)).norm(p=2).item()
                     norm = k * min([norm_1, norm_2, norm_3, norm_4])
-                    cond = (norm - clip).abs().item() > 1e-5
+                    cond = (norm - clip) > 1e-5
                 else:
                     cond = (p.norm(p=2) - clip).abs().item() > 1e-5
                 
