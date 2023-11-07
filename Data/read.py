@@ -16,7 +16,7 @@ def read_data(args, data_path='datasets/'):
             target = tr_dataset.targets
         elif args.data == 'cifar10':
             tr_dataset, te_dataset = get_cifar(path=data_path+args.data, size=args.img_sz)
-            target = tr_dataset.targets
+            target = torch.Tensor(tr_dataset.targets)
 
         args.num_class = target.unique().size(dim=0)
         target = target.tolist()
