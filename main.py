@@ -26,6 +26,7 @@ def run(args, date, device):
     
     for n, p in model.named_parameters():
         print(f"Layer {n}: {p.size()}")
+    sys.exit()
 
     if args.debug > 0:
         print(model)
