@@ -118,14 +118,14 @@ def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:tor
         rad = log_rad[i]
 
         og_im = wandb.Image(log_org_img[i])
-        og_sc = draw_score(score=log_org_scr[i])
+        og_sc = wandb.Image(draw_score(score=log_org_scr[i]))
         og_pr = log_org_prd[i]
 
         ad_im = wandb.Image(log_adv_img[i])
-        ad_sc = draw_score(score=log_adv_scr[i])
+        ad_sc = wandb.Image(draw_score(score=log_adv_scr[i]))
         ad_pr = log_adv_prd[i]
 
-        print(og_sc.shape, ad_sc.shape)
+        # print(og_sc.shape, ad_sc.shape)
         test_table.add_data(img_id, lab, rad, og_im, og_sc, og_pr, ad_im, ad_sc, ad_pr)
         idx += 1
     wandb.run.log({name: test_table})   
@@ -137,7 +137,7 @@ def denorm(batch:torch.Tensor, device:torch.device, mean=[0.1307], std=[0.3081])
         std = torch.tensor(std).to(device)
     return batch * std.view(1, -1, 1, 1) + mean.view(1, -1, 1, 1)
 
-def draw_score(score:np.ndarray):
+def draw_score(score:np.ndarray, num_lab:int):
 
     label = np.arange(len(score)).astype(np.int16)
     bar_label = [f'Label {i}' for i in label]
@@ -150,6 +150,7 @@ def draw_score(score:np.ndarray):
     plt.figure(figsize=(5,5))
     plt.bar(x=label, height=score)
     plt.ylabel('Score')
+    plt.xticks(np.arange(num_lab))
     plt.savefig(path)
     img = Image.open(path)
     arr = np.array(img)
