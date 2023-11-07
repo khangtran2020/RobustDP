@@ -25,6 +25,7 @@ def add_model_group(group):
     group.add_argument('--hdim', type=int, default=64, help='hidden embedding dim')
     group.add_argument("--opt", type=str, default='adam')
     group.add_argument("--dout", type=float, default=0.2)
+    group.add_argument("--decay", type=float, default=0.001)
     group.add_argument("--pat", type=int, default=20)
     group.add_argument("--clipw", type=float, default=1.0, help='clipping bound for lipschitz condtion')
     group.add_argument("--epochs", type=int, default=100, help='training step')

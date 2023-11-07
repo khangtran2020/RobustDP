@@ -10,7 +10,7 @@ from Utils.tracking import tracker_log, wandb
 def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
 
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss().to(device)
