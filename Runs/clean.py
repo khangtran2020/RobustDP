@@ -3,7 +3,7 @@ import torchmetrics
 from rich.progress import Progress
 from typing import Dict
 from Models.modules import EarlyStopping
-from Models.utils import clipping_weight
+from Models.utils import lip_clip, clip_weight
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
