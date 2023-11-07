@@ -26,7 +26,9 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         print(f"Norm weight of the last layer: {las_w.norm(p=2)}")
         num_c = args.num_class
 
-
+        pred = torch.Tensor([]).to(device)
+        gtar = torch.Tensor([]).to(device)
+        crad = torch.Tensor([]).to(device)
         for i, batch in enumerate(te_loader):
 
             data, target = batch
@@ -61,6 +63,8 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
             final_pred = adv_scores.max(1, keepdim=True)[1]
             metrics.update(final_pred, init_pred)
             metrics_tar.update(torch.nn.Softmax(dim=1)(adv_scores), target)
+
+            console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
 
             if (i == 0):
                 org_img = data[:num_plot]
