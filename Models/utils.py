@@ -9,22 +9,34 @@ def lip_clip(model:torch.nn.Module, clip:float):
         for n, p in model.named_parameters():
             if ('weight' in n) & ('last_lay' not in n):
                 if 'cnn_layers' in n:
-                    k = p.size(dim=-1)
-                    c1 = p.size(dim=1)
-                    c0 = p.size(dim=0)
-                    norm_1 = p.detach().view(int(c0*k), int(c1*k)).norm(p=2).item()
-                    norm_2 = p.detach().view(int(c0*k), int(c1*k)).norm(p=2).item()
-                    norm_3 = p.detach().view(int(c0), int(c1*k*k)).norm(p=2).item()
-                    norm_4 = p.detach().view(int(c0*k*k), int(c1)).norm(p=2).item()
-                    norm = k * min([norm_1, norm_2, norm_3, norm_4])
+                    conv_filter = p.data.detach().clone()
+                    out_ch, in_ch, h, w = conv_filter.shape
+                    
+                    transpose1 = torch.transpose(conv_filter, 1, 2)
+                    matrix1 = transpose1.reshape(out_ch*h, in_ch*w)
+                    
+                    transpose2 = torch.transpose(conv_filter, 1, 3)
+                    matrix2 = transpose2.reshape(out_ch*w, in_ch*h)
+
+                    matrix3 = conv_filter.view(out_ch, in_ch*h*w)
+
+                    transpose4 = torch.transpose(conv_filter, 0, 1)
+                    matrix4 = transpose4.reshape(in_ch, out_ch*h*w)
+
+                    norm_1 = torch.linalg.matrix_norm(matrix1, ord=2).item()
+                    norm_2 = torch.linalg.matrix_norm(matrix2, ord=2).item()
+                    norm_3 = torch.linalg.matrix_norm(matrix3, ord=2).item()
+                    norm_4 = torch.linalg.matrix_norm(matrix4, ord=2).item()
+
+                    norm = h * min([norm_1, norm_2, norm_3, norm_4])
                 else:
-                    norm = p.norm(p=2)
+                    norm = torch.linalg.matrix_norm(p.data, ord=2).item()
                 p.data = p.data / (norm + 1e-12)
 
     return model
 
 def clip_weight(model:torch.nn.Module, clip:float):
-    norm = model.last_lay.weight.data.norm(p=2)
+    norm = torch.linalg.matrix_norm(model.last_lay.weight.data, ord=2).item()
     model.last_lay.weight.data = model.last_lay.weight.data / (norm + 1e-12)
     return model
 
@@ -36,24 +48,32 @@ def check_clipped(model:torch.nn.Module, clip:float):
         for n, p in model.named_parameters():
             if ('weight' in n):
                 if 'cnn_layers' in n:
-                    k = p.size(dim=-1)
-                    c1 = p.size(dim=1)
-                    c0 = p.size(dim=0)
-                    norm_1 = p.detach().view(int(c0*k), int(c1*k)).norm(p=2).item()
-                    norm_2 = p.detach().view(int(c0*k), int(c1*k)).norm(p=2).item()
-                    norm_3 = p.detach().view(int(c0), int(c1*k*k)).norm(p=2).item()
-                    norm_4 = p.detach().view(int(c0*k*k), int(c1)).norm(p=2).item()
-                    norm = k * min([norm_1, norm_2, norm_3, norm_4])
-                    cond = (norm - clip) > 1e-5
+                    conv_filter = p.data.detach().clone()
+                    out_ch, in_ch, h, w = conv_filter.shape
+                    
+                    transpose1 = torch.transpose(conv_filter, 1, 2)
+                    matrix1 = transpose1.reshape(out_ch*h, in_ch*w)
+                    
+                    transpose2 = torch.transpose(conv_filter, 1, 3)
+                    matrix2 = transpose2.reshape(out_ch*w, in_ch*h)
+
+                    matrix3 = conv_filter.view(out_ch, in_ch*h*w)
+
+                    transpose4 = torch.transpose(conv_filter, 0, 1)
+                    matrix4 = transpose4.reshape(in_ch, out_ch*h*w)
+
+                    norm_1 = torch.linalg.matrix_norm(matrix1, ord=2).item()
+                    norm_2 = torch.linalg.matrix_norm(matrix2, ord=2).item()
+                    norm_3 = torch.linalg.matrix_norm(matrix3, ord=2).item()
+                    norm_4 = torch.linalg.matrix_norm(matrix4, ord=2).item()
+
+                    norm = h * min([norm_1, norm_2, norm_3, norm_4])
                 else:
-                    cond = (p.norm(p=2) - clip).abs().item() > 1e-5
-                
+                    norm = torch.linalg.matrix_norm(p.data, ord=2).item()
+                cond = (norm - clip) > 1e-5
                 if cond:
                     console.log(f'[bold][red] Failed initial clip check :x:: clip is {clip} and norm is {p.norm(p=2).item()}')
                     sys.exit()
     if res:
         console.log('[bold][green] Pass initial clip check: :white_check_mark:')
     return res
-
-
-
