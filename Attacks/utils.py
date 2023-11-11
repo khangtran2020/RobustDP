@@ -18,8 +18,6 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
     with console.status("Evaluating robustness") as status:
         # Accuracy counter
-        correct = 0
-        adv_examples = []
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         # Loop over all examples in test set
@@ -109,7 +107,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         console.log(f"Radius size: {crad.size()}, init pred size: {pred.size()}, target size: {gtar.size()}")
 
         final_acc = metrics.compute().item()
-        correct = (pred.int() == crad.int()).int()
+        correct = (pred.int() == gtar.int()).int()
         rad_ls, cert_acc, img_arr = certified_accuracy(radius=crad, correct=correct)
 
         images = wandb.Image(
