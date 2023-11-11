@@ -188,7 +188,7 @@ def draw_score(score:np.ndarray, num_lab:int):
     plt.bar(x=label, height=score)
     plt.ylabel('Score')
     plt.xticks(np.arange(num_lab))
-    plt.savefig(path)
+    plt.savefig(path, dpi=200, bbox_inches='tight')
     img = Image.open(path)
     arr = np.array(img)
     return arr
@@ -221,9 +221,10 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
 
     plt.figure(figsize=(5,5))
     plt.plot(range(len(radius_ls)), cert_acc)
-    plt.ylabel('Certified Accuracy')
     plt.xticks(np.arange(len(radius_ls)), [f'{a:.2f}' for a in radius_ls])
-    plt.savefig(path)
+    plt.ylabel('Certified Accuracy')
+    plt.xlabel('Certified Radius')
+    plt.savefig(path, dpi=200, bbox_inches='tight')
 
     img = Image.open(path)
     arr = np.array(img)
