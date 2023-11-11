@@ -209,7 +209,7 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
 
     for rad in considered_rad:
         rad_mask = (radius > rad).int()
-        corr_mask = torch.logical_and(rad_mask, correct)
+        corr_mask = torch.logical_and(rad_mask, correct).float()
         cert_acc.append(corr_mask.mean().item())
     
     radius_ls = considered_rad.tolist()
