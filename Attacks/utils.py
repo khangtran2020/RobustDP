@@ -8,7 +8,6 @@ import torchmetrics
 import numpy as np
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
-import torch.nn.functional as F
 from typing import Dict
 from PIL import Image
 from Attacks.attacks import fgsm_attack, pgd_attack
@@ -92,13 +91,11 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                     adv_scr = adv_scores[:num_plot]
                     adv_prd = final_pred[:num_plot]
                 elif args.data == 'cifar10':
-                    org_img = data[:num_plot]
-                    org_img = org_img.view((org_img.size(dim=0), org_img.size(dim=2), org_img.size(dim=3), org_img.size(dim=1)))
+                    org_img = data[:num_plot].permute(1, 2, 0)
                     org_scr = org_scores[:num_plot]
                     org_prd = init_pred[:num_plot]
 
-                    adv_img = adv_data[:num_plot]
-                    adv_img = adv_img.view((adv_img.size(dim=0), adv_img.size(dim=2), adv_img.size(dim=3), adv_img.size(dim=1)))
+                    adv_img = adv_data[:num_plot].permute(1, 2, 0)
                     adv_scr = adv_scores[:num_plot]
                     adv_prd = final_pred[:num_plot]
                 labels = target[:num_plot]

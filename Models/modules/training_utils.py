@@ -1,5 +1,7 @@
+import math
 import torch
 import numpy as np
+import torch.nn.functional as F
 from Utils.console import console
 
 class EarlyStopping:
@@ -42,3 +44,4 @@ class EarlyStopping:
                 console.log('Validation score improved ({self.val_score} --> {epoch_score}). Saving model!', style='info')
             torch.save(model.state_dict(), model_path)
         self.val_score = epoch_score
+    
