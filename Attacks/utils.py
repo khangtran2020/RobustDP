@@ -109,13 +109,24 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         console.log(f"Radius size: {crad.size()}, init pred size: {pred.size()}, target size: {gtar.size()}")
 
         final_acc = metrics.compute().item()
-        certified_acc = metrics_tar.compute().item()
+        correct = (pred.int() == crad.int()).int()
+        rad_ls, cert_acc, img_arr = certified_accuracy(radius=crad, correct=correct)
+
+        images = wandb.Image(
+            img_arr, caption="Initialize shadow graph"
+        )
+            
+        wandb.log({"Certified Accuracy": images})
+
         history['correctness_of_bound'] = final_acc
-        history['certified_acc'] = certified_acc
+        history['certified_radius'] = rad_ls
+        history['certified_acc'] = cert_acc
         console.log(f"Corretness of bound performance: {final_acc}")
-        console.log(f"Certified Accuracy: {certified_acc}")
+        console.log(f"Certified Radius: {rad_ls}")
+        console.log(f"Certified Accuracy: {cert_acc}")
         wandb.summary[f"Corretness of bound performance"] = f"{final_acc}"
-        wandb.summary[f"Certified Accuracy"] = f"{certified_acc}"
+        wandb.summary[f"Certified Accuracy"] = f"{cert_acc}"
+        wandb.summary[f"Certified Radius"] = f"{rad_ls}"
         console.log(f'[bold][green]Done Evaluating robustness: :white_check_mark:')
 
 def log_test_predictions(org_img:torch.Tensor, org_scr:torch.Tensor, org_prd:torch.Tensor, 
@@ -183,3 +194,40 @@ def draw_score(score:np.ndarray, num_lab:int):
     img = Image.open(path)
     arr = np.array(img)
     return arr
+
+def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:torch.Tensor=None):
+    
+    rad_min = radius.min().item()
+    rad_max = radius.max().item()
+
+    if custom_rad is not None:
+        considered_rad = custom_rad
+    else:
+        considered_rad = torch.linspace(start=rad_min, end=rad_max, steps=10)
+    
+    cert_acc = []
+
+    for rad in considered_rad:
+        rad_mask = (radius > rad).int()
+        corr_mask = torch.logical_and(rad_mask, correct)
+        cert_acc.append(corr_mask.mean().item())
+    
+    radius_ls = considered_rad.tolist()
+    name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+    path = f'results/dict/{name}.jpg'
+    while (os.path.exists(path)):
+        name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+        path = f'results/dict/{name}.jpg'
+
+    plt.figure(figsize=(5,5))
+    plt.plot(range(len(radius_ls)), cert_acc)
+    plt.ylabel('Certified Accuracy')
+    plt.xticks(np.arange(len(radius_ls)), radius_ls)
+    plt.savefig(path)
+
+    img = Image.open(path)
+    arr = np.array(img)
+
+    return radius_ls, cert_acc, arr
+
+
