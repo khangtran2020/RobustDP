@@ -200,6 +200,8 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
     rad_min = radius.min().item()
     rad_max = radius.max().item()
 
+    print(correct.unique(return_counts=True))
+
     if custom_rad is not None:
         considered_rad = custom_rad
     else:
