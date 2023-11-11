@@ -220,9 +220,9 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
         path = f'results/dict/{name}.jpg'
 
     plt.figure(figsize=(5,5))
-    plt.plot(range(len(radius_ls)), [f'{a:.2f}' for a in cert_acc])
+    plt.plot(range(len(radius_ls)), cert_acc)
     plt.ylabel('Certified Accuracy')
-    plt.xticks(np.arange(len(radius_ls)), radius_ls)
+    plt.xticks(np.arange(len(radius_ls)), [f'{a:.2f}' for a in radius_ls])
     plt.savefig(path)
 
     img = Image.open(path)
