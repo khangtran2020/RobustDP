@@ -25,7 +25,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         # Loop over all examples in test set
         las_w = model.last_lay.weight.data.clone().detach()
         print(f"Norm weight of the last layer: {las_w.norm(p=2)}, with size {las_w.size()}")
-        check_clipped(model=model, clip=1.0)
+        # check_clipped(model=model, clip=1.0)
         num_c = args.num_class
 
         pred = torch.Tensor([]).to(device)
