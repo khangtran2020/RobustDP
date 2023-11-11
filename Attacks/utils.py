@@ -203,7 +203,7 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
     if custom_rad is not None:
         considered_rad = custom_rad
     else:
-        considered_rad = torch.linspace(start=rad_min, end=rad_max, steps=10)
+        considered_rad = torch.linspace(start=0, end=rad_max, steps=10)
     
     cert_acc = []
 
