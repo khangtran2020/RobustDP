@@ -280,7 +280,7 @@ def _conv_matrices(conv_filter: torch.Tensor):
 
 def spectral_norm_conv(module: T_module,
                   name: str = 'weight',
-                  n_power_iterations: int = 1,
+                  n_power_iterations: int = 50,
                   eps: float = 1e-12,
                   dim: Optional[int] = None) -> T_module:
     r"""Applies spectral normalization to a parameter in the given module.
