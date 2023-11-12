@@ -14,7 +14,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     
     model_name = '{}.pt'.format(name)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    lay_out_size = deepcopy(model.lay_out_size)
 
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss().to(device)
@@ -62,10 +61,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
             tr_loss = 0
             ntr = 0
-            num_step = len(tr_loader)
-
             counter = 0
-            num_model = 0
+            
             # train
             model.train()
             max_bs = args.max_bs if (epoch < args.epochs - 1) else args.bs / args.num_mo
