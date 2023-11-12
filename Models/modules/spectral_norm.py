@@ -8,6 +8,7 @@ import torch
 from torch.nn.functional import normalize
 from typing import Any, Optional, TypeVar
 from torch.nn import Module
+from torch.linalg import matrix_norm
 from Utils.console import console
 
 __all__ = ['SpectralNormConv', 'SpectralNormConvLoadStateDictPreHook', 'SpectralNormConvStateDictHook',
@@ -137,7 +138,8 @@ class SpectralNormConv:
         _, _, h, w = new_weight.shape
         mat1, mat2, mat3, mat4 = _conv_matrices(conv_filter=new_weight)
         a = math.sqrt(h*w)
-        console.log(f"Layer {self.name}: mat 1 {a*torch.linalg.matrix_norm(mat1, ord=2).item()}, mat 2 {a*torch.linalg.matrix_norm(mat2, ord=2).item()}, mat 3 {a*torch.linalg.matrix_norm(mat3, ord=2).item()}, mat 4 {a*torch.linalg.matrix_norm(mat4, ord=2).item()}")
+        min_v = min([matrix_norm(mat1, ord=2).item(), matrix_norm(mat2, ord=2).item(), matrix_norm(mat3, ord=2).item(), matrix_norm(mat4, ord=2).item()])
+        console.log(f"Layer {self.name}: {a * min_v}")
         setattr(module, self.name, new_weight)
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
