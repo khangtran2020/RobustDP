@@ -8,6 +8,7 @@ import torch
 from torch.nn.functional import normalize
 from typing import Any, Optional, TypeVar
 from torch.nn import Module
+from Utils.console import console
 
 __all__ = ['SpectralNormConv', 'SpectralNormConvLoadStateDictPreHook', 'SpectralNormConvStateDictHook',
            'spectral_norm_conv', 'remove_spectral_norm_conv']
@@ -132,7 +133,12 @@ class SpectralNormConv:
         module.register_parameter(self.name, torch.nn.Parameter(weight.detach()))
 
     def __call__(self, module: Module, inputs: Any) -> None:
-        setattr(module, self.name, self.compute_weight(module, do_power_iteration=module.training))
+        new_weight = self.compute_weight(module, do_power_iteration=module.training)
+        _, _, h, w = new_weight.shape
+        mat1, mat2, mat3, mat4 = _conv_matrices(conv_filter=new_weight)
+        a = math.sqrt(h*w)
+        console.log(f"Layer {self.name}: mat 1 {a*torch.linalg.matrix_norm(mat1, ord=2).item()}, mat 2 {a*torch.linalg.matrix_norm(mat2, ord=2).item()}, mat 3 {a*torch.linalg.matrix_norm(mat3, ord=2).item()}, mat 4 {a*torch.linalg.matrix_norm(mat4, ord=2).item()}")
+        setattr(module, self.name, new_weight)
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
         v = torch.linalg.multi_dot([weight_mat.t().mm(weight_mat).pinverse(), weight_mat.t(), u.unsqueeze(1)]).squeeze(1)
