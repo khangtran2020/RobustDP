@@ -1,4 +1,5 @@
 import sys
+import math
 import torch
 from Utils.console import console
 
@@ -67,7 +68,7 @@ def check_clipped(model:torch.nn.Module, clip:float):
                     norm_3 = torch.linalg.matrix_norm(matrix3, ord=2).item()
                     norm_4 = torch.linalg.matrix_norm(matrix4, ord=2).item()
 
-                    norm = h * min([norm_1, norm_2, norm_3, norm_4])
+                    norm = math.sqrt(h*w) * min([norm_1, norm_2, norm_3, norm_4])
                 else:
                     norm = torch.linalg.matrix_norm(p.data, ord=2).item()
                 cond = (norm - clip) > 1e-5
