@@ -30,7 +30,7 @@ class SpectralNormConv:
     n_power_iterations: int
     eps: float
 
-    def __init__(self, name: str = 'weight', n_power_iterations: int = 50, dim: int = 0, eps: float = 1e-12) -> None:
+    def __init__(self, name: str = 'weight', n_power_iterations: int = 50, dim: int = 0, eps: float = 1e-12, debug=False) -> None:
         self.name = name
         self.dim = dim
         if n_power_iterations <= 0:
@@ -38,6 +38,7 @@ class SpectralNormConv:
                              f'got n_power_iterations={n_power_iterations}')
         self.n_power_iterations = n_power_iterations
         self.eps = eps
+        self.debug = debug
 
     def reshape_weight_to_matrix(self, weight: torch.Tensor) -> torch.Tensor:
         weight_mat = weight
@@ -135,11 +136,12 @@ class SpectralNormConv:
 
     def __call__(self, module: Module, inputs: Any) -> None:
         new_weight = self.compute_weight(module, do_power_iteration=module.training)
-        _, _, h, w = new_weight.shape
-        mat1, mat2, mat3, mat4 = _conv_matrices(conv_filter=new_weight)
-        a = math.sqrt(h*w)
-        min_v = min([matrix_norm(mat1, ord=2).item(), matrix_norm(mat2, ord=2).item(), matrix_norm(mat3, ord=2).item(), matrix_norm(mat4, ord=2).item()])
-        console.log(f"Layer {self.name}: {a * min_v}")
+        if self.debug:
+            _, _, h, w = new_weight.shape
+            mat1, mat2, mat3, mat4 = _conv_matrices(conv_filter=new_weight)
+            a = math.sqrt(h*w)
+            min_v = min([matrix_norm(mat1, ord=2).item(), matrix_norm(mat2, ord=2).item(), matrix_norm(mat3, ord=2).item(), matrix_norm(mat4, ord=2).item()])
+            console.log(f"Layer {self.name}: {a * min_v}")
         setattr(module, self.name, new_weight)
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
@@ -282,7 +284,8 @@ def spectral_norm_conv(module: T_module,
                   name: str = 'weight',
                   n_power_iterations: int = 100,
                   eps: float = 1e-12,
-                  dim: Optional[int] = None) -> T_module:
+                  dim: Optional[int] = None, 
+                  debug:bool=False) -> T_module:
     r"""Applies spectral normalization to a parameter in the given module.
 
     .. math::
@@ -339,7 +342,7 @@ def spectral_norm_conv(module: T_module,
             dim = 1
         else:
             dim = 0
-    SpectralNormConv.apply(module, name, n_power_iterations, dim, eps)
+    SpectralNormConv.apply(module, name, n_power_iterations, dim, eps, debug=debug)
     return module
 
 def remove_spectral_norm_conv(module: T_module, name: str = 'weight') -> T_module:

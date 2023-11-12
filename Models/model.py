@@ -25,7 +25,7 @@ class CNN(nn.Module):
         self.cnn_layers = nn.ModuleList()
 
         self.cnn_layers.append(
-            spectral_norm_conv(nn.Conv2d(channel_in, channel[0], kernel_size=kernal_size, padding=padding, stride=stride))
+            spectral_norm_conv(nn.Conv2d(channel_in, channel[0], kernel_size=kernal_size, padding=padding, stride=stride), debug=bool(debug))
         )
         img_s = int((img_s + 2*padding - 1*(kernal_size - 1) - 1) / stride + 1)
         self.num_trans = 1
@@ -42,7 +42,7 @@ class CNN(nn.Module):
 
         for i in range(1, len(channel)):
             self.cnn_layers.append(
-                spectral_norm_conv(nn.Conv2d(channel[i-1], channel[i], kernel_size=kernal_size, padding=padding, stride=stride))
+                spectral_norm_conv(nn.Conv2d(channel[i-1], channel[i], kernel_size=kernal_size, padding=padding, stride=stride), debug=bool(debug))
             )
             self.num_trans += 1
             self.layer_name.append(f'conv_{i+1}')
