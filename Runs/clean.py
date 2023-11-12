@@ -57,7 +57,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 loss.backward()
                 optimizer.step()
                 # model = lip_clip(model=model, clip=args.clipw)
-                # model = clip_weight(model=model, clip=args.clipw)
+                model = clip_weight(model=model, clip=args.clipw)
                 tr_loss += loss.item()*pred.size(dim=0)
                 ntr += pred.size(dim=0)
                 progress.advance(tk_up)
