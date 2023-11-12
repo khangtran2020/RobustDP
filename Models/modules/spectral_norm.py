@@ -149,12 +149,12 @@ class SpectralNormConv:
         return v.mul_(target_sigma / torch.dot(u, torch.mv(weight_mat, v)))
 
     @staticmethod
-    def apply(module: Module, name: str, n_power_iterations: int, dim: int, eps: float) -> 'SpectralNormConv':
+    def apply(module: Module, name: str, n_power_iterations: int, dim: int, eps: float, debug: bool) -> 'SpectralNormConv':
         for hook in module._forward_pre_hooks.values():
             if isinstance(hook, SpectralNormConv) and hook.name == name:
                 raise RuntimeError(f"Cannot register two spectral_norm hooks on the same parameter {name}")
 
-        fn = SpectralNormConv(name, n_power_iterations, dim, eps)
+        fn = SpectralNormConv(name, n_power_iterations, dim, eps, debug)
         weight = module._parameters[name]
         if weight is None:
             raise ValueError(f'`SpectralNorm` cannot be applied as parameter `{name}` is None')
