@@ -28,7 +28,7 @@ def run(args, date, device):
         for n, p in model.named_parameters():
             console.log(f"Layer {n}: {p.size()}")
 
-        console.log(model)
+        console.log(model.state_dict)
         with console.status("Testing comparable of considered model") as status:
             console.log(f"Model: {model}")
             for n, p in model.named_parameters():
