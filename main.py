@@ -29,8 +29,8 @@ def run(args, date, device):
             console.log(f"Layer {n}: {p.size()}")
 
         console.log(model)
-        model = lip_clip(model=model, clip=args.clipw)
-        model = clip_weight(model=model, clip=args.clipw)
+        # model = lip_clip(model=model, clip=args.clipw)
+        # model = clip_weight(model=model, clip=args.clipw)
         checked = check_clipped(model=model, clip=args.clipw)
 
         console.log(model.last_lay.weight.data)

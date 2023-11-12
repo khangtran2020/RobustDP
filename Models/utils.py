@@ -72,7 +72,7 @@ def check_clipped(model:torch.nn.Module, clip:float):
                     norm = torch.linalg.matrix_norm(p.data, ord=2).item()
                 cond = (norm - clip) > 1e-5
                 if cond:
-                    console.log(f'[bold][red] Failed initial clip check :x:: clip is {clip} and norm is {p.norm(p=2).item()}')
+                    console.log(f'[bold][red] Failed initial clip check :x:: clip is {clip} and norm is {p.norm(p=2).item()}, at layer: {n}')
                     sys.exit()
     if res:
         console.log('[bold][green] Pass initial clip check: :white_check_mark:')
