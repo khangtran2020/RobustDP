@@ -111,7 +111,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         rad_ls, cert_acc, img_arr = certified_accuracy(radius=crad, correct=correct)
 
         images = wandb.Image(
-            img_arr, caption="Initialize shadow graph"
+            img_arr, caption="Certified Accuracy"
         )
             
         wandb.log({"Certified Accuracy": images})
