@@ -60,14 +60,14 @@ class CNN(nn.Module):
 
         # linear part
         self.linear_layers = nn.ModuleList()
-        self.linear_layers.append(spectral_norm(nn.Linear(self.flatten_size, hid_dim[0])))
+        self.linear_layers.append(spectral_norm(nn.Linear(self.flatten_size, hid_dim[0]), n_power_iterations=100))
         self.layer_name.append('linr_1')
         self.num_trans += 1
         for i in range(1, len(hid_dim)):
             self.linear_layers.append(spectral_norm(nn.Linear(hid_dim[i-1], hid_dim[i])))
             self.num_trans += 1
             self.layer_name.append(f'linr_{i+1}')
-        self.last_lay = nn.Linear(hid_dim[-1], out_dim, bias=False)
+        self.last_lay = spectral_norm(nn.Linear(hid_dim[-1], out_dim, bias=False), n_power_iterations=100)
         self.conv_drop = nn.Dropout2d(dropout)
         self.linr_drop = nn.Dropout(dropout)
         self.debug = debug
