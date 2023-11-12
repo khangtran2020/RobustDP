@@ -39,7 +39,7 @@ def run(args, date, device):
             console.log(f'[bold][green]Done testing comparable of considered mode: :white_check_mark:')
         # model = lip_clip(model=model, clip=args.clipw)
         # model = clip_weight(model=model, clip=args.clipw)
-        checked = check_clipped(model=model, clip=args.clipw)
+        # checked = check_clipped(model=model, clip=args.clipw)
     
     # train the model
     if args.gen_mode == 'clean':
