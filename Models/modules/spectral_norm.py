@@ -111,9 +111,10 @@ class SpectralNormConv:
         sigma3 = torch.dot(u3, torch.mv(mat3, v3))
         sigma4 = torch.dot(u4, torch.mv(mat4, v4))
 
-        sigma = math.sqrt(h*w) * torch.min(sigma1, torch.min(sigma2, torch.min(sigma3, sigma4)))
+        sigma = math.sqrt(h*w) * torch.min(sigma1, torch.min(sigma2, torch.min(sigma3, sigma4))).item()
 
-        weight = weight / sigma
+        if sigma > 1.0:
+            weight = weight / sigma
         return weight
 
     def remove(self, module: Module) -> None:

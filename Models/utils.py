@@ -38,7 +38,8 @@ def lip_clip(model:torch.nn.Module, clip:float):
 
 def clip_weight(model:torch.nn.Module, clip:float):
     norm = torch.linalg.matrix_norm(model.last_lay.weight.data, ord=2).item()
-    model.last_lay.weight.data = model.last_lay.weight.data / (norm + 1e-12)
+    if norm > clip:
+        model.last_lay.weight.data = model.last_lay.weight.data / (norm + 1e-12)
     return model
 
 def check_clipped(model:torch.nn.Module, clip:float):
