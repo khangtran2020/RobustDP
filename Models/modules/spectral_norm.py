@@ -140,7 +140,7 @@ class SpectralNormConv:
         a = math.sqrt(h*w)
         min_v = min([matrix_norm(mat1, ord=2).item(), matrix_norm(mat2, ord=2).item(), matrix_norm(mat3, ord=2).item(), matrix_norm(mat4, ord=2).item()])
         console.log(f"Layer {self.name}: {a * min_v}")
-        setattr(module, self.name, new_weight)
+        setattr(module, self.name + "_orig", new_weight)
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
         v = torch.linalg.multi_dot([weight_mat.t().mm(weight_mat).pinverse(), weight_mat.t(), u.unsqueeze(1)]).squeeze(1)
