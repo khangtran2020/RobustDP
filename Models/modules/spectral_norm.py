@@ -30,7 +30,7 @@ class SpectralNormConv:
     n_power_iterations: int
     eps: float
 
-    def __init__(self, name: str = 'weight', n_power_iterations: int = 1, dim: int = 0, eps: float = 1e-12) -> None:
+    def __init__(self, name: str = 'weight', n_power_iterations: int = 50, dim: int = 0, eps: float = 1e-12) -> None:
         self.name = name
         self.dim = dim
         if n_power_iterations <= 0:
@@ -105,10 +105,10 @@ class SpectralNormConv:
                     u4 = u4.clone(memory_format=torch.contiguous_format)
                     v4 = v4.clone(memory_format=torch.contiguous_format)
 
-        sigma1 = matrix_norm(mat1)
-        sigma2 = matrix_norm(mat2)
-        sigma3 = matrix_norm(mat3)
-        sigma4 = matrix_norm(mat4)
+        sigma1 = torch.dot(u1, torch.mv(mat1, v1))
+        sigma2 = torch.dot(u2, torch.mv(mat2, v2))
+        sigma3 = torch.dot(u3, torch.mv(mat3, v3))
+        sigma4 = torch.dot(u4, torch.mv(mat4, v4))
 
         sigma = math.sqrt(h*w) * torch.min(sigma1, torch.min(sigma2, torch.min(sigma3, sigma4)))
 
@@ -140,7 +140,7 @@ class SpectralNormConv:
         a = math.sqrt(h*w)
         min_v = min([matrix_norm(mat1, ord=2).item(), matrix_norm(mat2, ord=2).item(), matrix_norm(mat3, ord=2).item(), matrix_norm(mat4, ord=2).item()])
         console.log(f"Layer {self.name}: {a * min_v}")
-        setattr(module, self.name + "_orig", new_weight)
+        setattr(module, self.name, new_weight)
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
         v = torch.linalg.multi_dot([weight_mat.t().mm(weight_mat).pinverse(), weight_mat.t(), u.unsqueeze(1)]).squeeze(1)
