@@ -29,11 +29,6 @@ def run(args, date, device):
             console.log(f"Layer {n}: {p.size()}")
 
         console.log(model)
-        # model = lip_clip(model=model, clip=args.clipw)
-        # model = clip_weight(model=model, clip=args.clipw)
-        checked = check_clipped(model=model, clip=args.clipw)
-
-        console.log(model.last_lay.weight.data)
         with console.status("Testing comparable of considered model") as status:
             console.log(f"Model: {model}")
             for n, p in model.named_parameters():
@@ -42,6 +37,9 @@ def run(args, date, device):
             out_put = model(image)
             console.log(f"Output dimension: {out_put.size()}")
             console.log(f'[bold][green]Done testing comparable of considered mode: :white_check_mark:')
+        # model = lip_clip(model=model, clip=args.clipw)
+        # model = clip_weight(model=model, clip=args.clipw)
+        checked = check_clipped(model=model, clip=args.clipw)
     
     # train the model
     if args.gen_mode == 'clean':
