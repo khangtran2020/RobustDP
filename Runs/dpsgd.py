@@ -10,7 +10,8 @@ from opacus.utils.batch_memory_manager import BatchMemoryManager
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
-def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict, name=str):
+def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, 
+            device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -100,10 +101,13 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         loss.backward()
                         opt_s1 = deepcopy(optimizer._step_skip_queue)
                         optimizer.step()
-                        if opt_s1[0] == False: counter += 1
+                        if opt_s1[0] == False: 
+                            counter += 1
+                            model = clip_weight(model=model, clip=args.clipw)
                     tr_loss += loss.item()*pred.size(dim=0)
                     ntr += pred.size(dim=0)
                     progress.advance(tk_up)
+            
             console.log(f"Counter: {counter}")
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
@@ -126,14 +130,22 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         data, target = d
                         data = data.to(device)
                         target = target.to(device)
-                        pred = model(data)
-                        loss = objective(pred, target)
-                        pred = pred_fn(pred)
-                        metrics.update(pred, target)
-                        va_loss += loss.item()*pred.size(dim=0)
-                        nva += pred.size(dim=0)
-                        progress.advance(tk_ev)
 
+                        preds = None
+                        for mi, m in enumerate(model_list):
+                            if mi == 0:
+                                preds = m(data)
+                            else:
+                                preds = preds + m(data)
+                        
+                        preds = preds / len(model_list)
+
+                        loss = objective(preds, target)
+                        preds = pred_fn(preds)
+                        metrics.update(preds, target)
+                        va_loss += loss.item()*preds.size(dim=0)
+                        nva += preds.size(dim=0)
+                        progress.advance(tk_ev)
             else:
                 model.eval()
                 with torch.no_grad():
@@ -173,5 +185,57 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             progress.reset(tk_up)
             progress.reset(tk_ev)
         console.log(f"Done Training target model: :white_check_mark:")
-    model.load_state_dict(torch.load(args.model_path + model_name))
-    return model, history
+    return model_list, history
+
+def evaltdp(args, te_loader:torch.utils.data.DataLoader, model_list:list, device:torch.device, history:Dict):
+    
+    if args.num_class > 1:
+        objective = torch.nn.CrossEntropyLoss().to(device)
+        pred_fn = torch.nn.Softmax(dim=1).to(device)
+        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
+    else:
+        objective = torch.nn.BCEWithLogitsLoss().to(device)
+        pred_fn = torch.nn.Sigmoid().to(device)
+        metrics = torchmetrics.classification.BinaryAccuracy().to(device)
+    
+    console.log(f"[green]Evaluate Test / Objective of the training process[/green]: {objective}")
+    console.log(f"[green]Evaluate Test / Predictive activation[/green]: {pred_fn}")
+    console.log(f"[green]Evaluate Test / Evaluating with metrics[/green]: {metrics}")
+    for m in model_list:
+        m.to(device)
+        m.eval()
+
+
+    with Progress(console=console) as progress:
+        task1 = progress.add_task("[red]Evaluating Test ...", total=len(te_loader))
+        te_loss = 0
+        nte = 0
+        # validation
+        
+        with torch.no_grad():
+            for bi, d in enumerate(te_loader):
+                data, target = d
+                data = data.to(device)
+                target = target.to(device)
+                
+                for mi, m in enumerate(model_list):
+                    if mi == 0:
+                        preds = m(data)
+                    else:
+                        preds = preds + m(data)
+                loss = objective(preds, target)
+                preds = pred_fn(preds)
+                metrics.update(preds, target)
+                te_loss += loss.item()*preds.size(dim=0)
+                nte += preds.size(dim=0)
+                progress.update(task1, advance=bi+1)
+
+            te_loss = te_loss / nte 
+            te_perf = metrics.compute().item()
+            wandb.run.summary['te_loss'] = '{0:.3f}'.format(te_loss)
+            wandb.run.summary['te_acc'] = '{0:.3f}'.format(te_perf)
+            history['best_test_loss'] = te_loss
+            history['best_test_perf'] = te_perf
+            metrics.reset()
+
+    return history
