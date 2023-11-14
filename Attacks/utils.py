@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 from typing import Dict
 from PIL import Image
-from Attacks.attacks import fgsm_attack, pgd_attack
-from Models.utils import check_clipped
+from Attacks.attacks import fgsm_attack, pgd_attack, pgd_attack_dp
 from Utils.console import console
+from Utils.utils import get_index_by_value
 
 def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
 
@@ -254,6 +254,7 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
         gtar = torch.Tensor([]).to(device)
         crad = torch.Tensor([]).to(device)
         bound = hoeffding_bound(nobs=args.num_mo, alpha=args.alpha, bonferroni_hyp_n=num_c)
+        log_epoch = 0
 
         for i, batch in enumerate(te_loader):
 
@@ -279,23 +280,32 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
             lb = top_k[:, 0] - bound
             ub = top_k[:, 1] + bound
             abstain_mask = (lb > ub).int()
+            idx = get_index_by_value(a=abstain_mask, val=1)
             radius = (lb - ub) / (4 * (num_c - 1) * args.clipw)
             init_pred = org_scores.max(1, keepdim=True)[1]
+
 
             if args.data == 'mnist':
                 data_denorm = denorm(data, device=device)
             elif args.data == 'cifar10':
                 data_denorm = denorm(data, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
 
-            adv_data = pgd_attack_dp(image=data_denorm, label=target, steps=args.pgd_steps, model=model, rad=radius, alpha=2/255, device=device)
+            adv_data = pgd_attack_dp(image=data_denorm, label=target, steps=args.pgd_steps, model_list=model_list, rad=radius, alpha=2/255, device=device)
             if args.data == 'mnist':
                 adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
             elif args.data == 'cifar10':
                 adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
 
-            adv_scores = model(adv_data)
+            for mi, m in enumerate(model_list):
+                score = m(adv_data)
+                if mi == 0:
+                    adv_scores = score.clone()
+                else:
+                    adv_scores = adv_scores + score.clone()
+
+            adv_scores = adv_scores / args.num_mo
             final_pred = adv_scores.max(1, keepdim=True)[1]
-            metrics.update(final_pred, init_pred)
+            metrics.update(final_pred[idx], init_pred[idx])
             metrics_tar.update(torch.nn.Softmax(dim=1)(adv_scores), target)
 
             # console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
@@ -303,30 +313,33 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
             pred = torch.cat((pred, init_pred.squeeze()), dim=0)
             gtar = torch.cat((gtar, target), dim=0)
 
-            if (i == 0):
+            if (i == log_epoch) & (len(idx) > 0):
 
                 if args.data == 'mnist':
-                    org_img = data[:num_plot]
-                    org_scr = org_scores[:num_plot]
-                    org_prd = init_pred[:num_plot]
+                    org_img = data[idx][:num_plot]
+                    org_scr = org_scores[idx][:num_plot]
+                    org_prd = init_pred[idx][:num_plot]
 
-                    adv_img = adv_data[:num_plot]
-                    adv_scr = adv_scores[:num_plot]
-                    adv_prd = final_pred[:num_plot]
+                    adv_img = adv_data[idx][:num_plot]
+                    adv_scr = adv_scores[idx][:num_plot]
+                    adv_prd = final_pred[idx][:num_plot]
                 elif args.data == 'cifar10':
-                    org_img = data[:num_plot].permute(0, 2, 3, 1)
-                    org_scr = org_scores[:num_plot]
-                    org_prd = init_pred[:num_plot]
+                    org_img = data[idx][:num_plot].permute(0, 2, 3, 1)
+                    org_scr = org_scores[idx][:num_plot]
+                    org_prd = init_pred[idx][:num_plot]
 
-                    adv_img = adv_data[:num_plot].permute(0, 2, 3, 1)
-                    adv_scr = adv_scores[:num_plot]
-                    adv_prd = final_pred[:num_plot]
-                labels = target[:num_plot]
-                rads = radius[:num_plot]
+                    adv_img = adv_data[idx][:num_plot].permute(0, 2, 3, 1)
+                    adv_scr = adv_scores[idx][:num_plot]
+                    adv_prd = final_pred[idx][:num_plot]
+                labels = target[idx][:num_plot]
+                rads = radius[idx][:num_plot]
 
-                print(f"Logging test prediction")
+                print(f"Logging test prediction for epoch {log_epoch}, with length {len(idx)}")
                 log_test_predictions(org_img=org_img, org_scr=org_scr, org_prd=org_prd, adv_img=adv_img, adv_scr=adv_scr, 
                                      adv_prd=adv_prd,labels=labels, radius=rads, name=f"Predictions under {args.att_mode.split('-')[0]} attack", num_class=args.num_class)
+            else:
+                log_epoch += 1
+            
 
         # Calculate final accuracy for this epsilon
         console.log(f"Radius size: {crad.size()}, init pred size: {pred.size()}, target size: {gtar.size()}")

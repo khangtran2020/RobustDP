@@ -8,7 +8,7 @@ from Data.read import read_data
 from Models.model import CNN
 from Runs.clean import train, evalt
 from Runs.dpsgd import traindp, evaltdp
-from Attacks.utils import robust_eval_clean
+from Attacks.utils import robust_eval_clean, robust_eval_dp
 from Utils.utils import print_args, seed_everything, init_history, get_name, save_dict
 from Utils.console import console
 from Utils.tracking import init_tracker
@@ -47,6 +47,7 @@ def run(args, date, device):
     else:
         model_list, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
         model_hist = evaltdp(args=args, te_loader=te_loader, model_list=model_list, device=device, history=model_hist)
+        robust_eval_dp(args=args, model_list=model_list, device=device, te_loader=te_loader, num_plot=50, history=att_hist)
 
     general_hist = {
         'data': data_hist,

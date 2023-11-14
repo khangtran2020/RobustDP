@@ -42,3 +42,42 @@ def pgd_attack(image:torch.Tensor, label:torch.Tensor, steps:int, model:torch.nn
         adv = torch.clamp(img + delta, min=0, max=1).detach()
 
     return adv
+
+def pgd_attack_dp(image:torch.Tensor, label:torch.Tensor, steps:int, model_list:list, rad:torch.Tensor, alpha:float, device:torch.device, random:bool=False):
+    
+    console.log("Attacking with PGD attack")
+    img = image.detach().clone().to(device)
+    lab = label.detach().clone().to(device)
+    obj = torch.nn.CrossEntropyLoss()
+
+    adv = img.clone()
+    bsz = img.size(dim=0)
+
+    if random:
+        delta = torch.empty_like(adv).normal_(mean=0, std=rad)
+        delta = delta * min(1, rad / (delta.norm(p=2).item() + 1e-12))
+        adv = adv + delta
+        adv = torch.clamp(adv, min=0, max=1).detach()
+        del delta
+
+    for i in range(steps):
+
+        adv.requires_grad = True
+
+        for mi, m in enumerate(model_list):
+            if mi == 0:
+                pred = m(adv)
+            else:
+                pred = pred + m(adv)
+        loss = obj(pred, lab)
+
+        grad = torch.autograd.grad(loss, adv, retain_graph=False, create_graph=False)[0]
+        adv = adv.detach() + alpha * grad.sign()
+        delta = adv - img
+        weight = rad / (torch.flatten(delta, start_dim=1).norm(p=2, dim=1) + 1e-12)
+        weight = torch.min(torch.ones_like(weight), weight)
+        for j in range(delta.size(dim=0)):
+            delta[j] = delta[j] * weight[j]
+        adv = torch.clamp(img + delta, min=0, max=1).detach()
+
+    return adv
