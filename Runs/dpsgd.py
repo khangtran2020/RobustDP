@@ -4,7 +4,7 @@ from copy import deepcopy
 from rich.progress import Progress
 from typing import Dict
 from Models.modules.training_utils import EarlyStopping
-from Models.utils import lip_clip, clip_weight
+from Models.utils import lip_clip, clip_weight, init_model
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
@@ -94,7 +94,9 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                                 saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
                                 tensor.grad = saved_var[tensor_name] / num_data_mini
                         optimizer.step()
-                        model_list.append(deepcopy(model))
+
+                        new_model = init_model(args=args)
+                        model_list.append(new_model.load_state_dict(model.state_dict))
 
                         pred = pred_fn(pred).detach()
                         metrics.update(pred, mini_targ)

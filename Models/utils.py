@@ -1,6 +1,7 @@
 import sys
 import math
 import torch
+from Models.model import CNN
 from Utils.console import console
 
 def lip_clip(model:torch.nn.Module, clip:float):
@@ -79,3 +80,7 @@ def check_clipped(model:torch.nn.Module, clip:float):
     if res:
         console.log('[bold][green] Pass initial clip check: :white_check_mark:')
     return res
+
+def init_model(args):
+    model = CNN(channel=[32, 64], hid_dim=[256, 64], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=3, debug=args.debug)
+    return model
