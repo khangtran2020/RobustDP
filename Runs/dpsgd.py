@@ -49,14 +49,12 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
             tr_loss = 0
             ntr = 0
-            counter = 0
             
             # train
             model.train()
-            max_bs = args.max_bs if (epoch < args.epochs - 1) else args.bs / args.num_mo
 
             for bi, d in enumerate(tr_loader):
-                if (epoch == args.epochs - 1) & (counter == len(tr_loader) - 1):
+                if (epoch == args.epochs - 1):
                     # model.zero_grad()
                     model.load_state_dict(torch.load(args.model_path + model_name))
                     optimizer.zero_grad()
@@ -81,16 +79,12 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     pred = pred_fn(pred)
                     metrics.update(pred, target)
                     loss.backward()
-                    opt_s1 = deepcopy(optimizer._step_skip_queue)
                     optimizer.step()
-                    if opt_s1[0] == False: 
-                        counter += 1
-                        model = clip_weight(model=model, clip=args.clipw)
+                    model = clip_weight(model=model, clip=args.clipw)
                 tr_loss += loss.item()*pred.size(dim=0)
                 ntr += pred.size(dim=0)
                 progress.advance(tk_up)
-            
-            console.log(f"Counter: {counter}")
+
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
             metrics.reset()   
