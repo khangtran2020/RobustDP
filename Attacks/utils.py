@@ -236,6 +236,8 @@ def hoeffding_bound(nobs, alpha, bonferroni_hyp_n=1):
 
 def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
 
+    torch.cuda.empty_cache()
+
     with console.status("Evaluating robustness") as status:
         # Accuracy counter
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
@@ -340,7 +342,8 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
                                      adv_prd=adv_prd,labels=labels, radius=rads, name=f"Predictions under {args.att_mode.split('-')[0]} attack", num_class=args.num_class)
             else:
                 log_epoch += 1
-            
+            del adv_data
+            torch.cuda.empty_cache()
 
         # Calculate final accuracy for this epsilon
         console.log(f"Radius size: {crad.size()}, init pred size: {pred.size()}, target size: {gtar.size()}")
