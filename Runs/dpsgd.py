@@ -75,7 +75,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         mini_targ = target[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
 
                         pred = model(mini_data)
-                        loss = objective(mini_data, mini_targ)
+                        loss = objective(pred, mini_targ)
                         saved_var = dict()
                         for tensor_name, tensor in model.named_parameters():
                             saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
