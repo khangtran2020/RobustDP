@@ -33,7 +33,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
     # model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
 
-    console.log(f"Using sigma={optimizer.noise_multiplier} and C={args.clip}")
+    console.log(f"Using sigma={args.ns} and C={args.clip}")
     model_list = []
 
     # es = EarlyStopping(patience=15, mode='max', verbose=False)
