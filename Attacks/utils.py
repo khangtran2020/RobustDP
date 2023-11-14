@@ -305,7 +305,8 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
 
             adv_scores = adv_scores / args.num_mo
             final_pred = adv_scores.max(1, keepdim=True)[1]
-            metrics.update(final_pred[idx], init_pred[idx])
+            if len(idx) > 0:
+                metrics.update(final_pred[idx], init_pred[idx])
             metrics_tar.update(torch.nn.Softmax(dim=1)(adv_scores), target)
 
             # console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
