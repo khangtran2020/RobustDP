@@ -95,9 +95,11 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                                 tensor.grad = saved_var[tensor_name] / num_data_mini
                         optimizer.step()
 
-                        new_model = init_model(args=args)
+                        
                         torch.save(model.state_dict(), args.model_path + f"model_{mit+1}_{model_name}")
-                        model_list.append(new_model.load_state_dict(torch.load(args.model_path + f"model_{mit+1}_{model_name}")))
+                        new_model = init_model(args=args)
+                        new_model.load_state_dict(model.state_dict())
+                        model_list.append(new_model)
 
                         pred = pred_fn(pred).detach()
                         metrics.update(pred, mini_targ)
