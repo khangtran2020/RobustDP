@@ -20,7 +20,8 @@ def add_data_group(group):
 def add_model_group(group):
     group.add_argument("--model", type=str, default='cnn', help="Model type")
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
-    group.add_argument('--bs', type=int, default=512, help="batch size for training process")
+    group.add_argument('--trbs', type=int, default=512, help="batch size for training process")
+    group.add_argument('--tebs', type=int, default=512, help="batch size for testing process")
     group.add_argument('--nlay', type=int, default=2, help='# of layers')
     group.add_argument('--hdim', type=int, default=64, help='hidden embedding dim')
     group.add_argument("--opt", type=str, default='adam')
