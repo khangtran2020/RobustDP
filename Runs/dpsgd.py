@@ -130,6 +130,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     model = clip_weight(model=model, clip=args.clipw)
                     tr_loss += loss.detach().mean().item()*num_data
                     ntr += num_data
+                    torch.save(model.state_dict(), args.model_path + model_name)
                 progress.advance(tk_up)
 
             tr_loss = tr_loss / ntr 
