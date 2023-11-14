@@ -252,9 +252,9 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
         num_c = args.num_class
         pred_fn = torch.nn.Softmax(dim=1) if num_c > 1 else torch.nn.Sigmoid()
 
-        pred = torch.Tensor([]).to(device)
-        gtar = torch.Tensor([]).to(device)
-        crad = torch.Tensor([]).to(device)
+        pred = torch.Tensor([])
+        gtar = torch.Tensor([])
+        crad = torch.Tensor([])
         bound = hoeffding_bound(nobs=args.num_mo, alpha=args.alpha, bonferroni_hyp_n=num_c)
         log_epoch = 0
 
@@ -311,10 +311,10 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
                 metrics.update(final_pred[idx], init_pred[idx])
             metrics_tar.update(torch.nn.Softmax(dim=1)(adv_scores), target)
 
-            # console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
-            crad = torch.cat((crad, radius), dim=0)
-            pred = torch.cat((pred, init_pred.squeeze()), dim=0)
-            gtar = torch.cat((gtar, target), dim=0)
+            console.log(f"Radius size: {radius.size()}, init pred size: {init_pred.size()}, target size: {target.size()}")
+            crad = torch.cat((crad, radius.cpu()), dim=0)
+            pred = torch.cat((pred, init_pred.squeeze().cpu()), dim=0)
+            gtar = torch.cat((gtar, target.cpu()), dim=0)
 
             if (i == log_epoch) & (len(idx) > 0):
 
