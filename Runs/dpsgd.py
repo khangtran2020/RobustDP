@@ -62,7 +62,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 target = target.to(device)
                 num_data = data.size(dim=0)
                 
-                if (epoch == args.epochs - 1) & (bi == num_step - 1):
+                if (epoch == args.epochs - 1) & (bi == 2):
                     
                     num_data_mini = int(num_data / args.num_mo)
 
@@ -103,6 +103,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         tr_loss += loss.detach().mean().item()*num_data_mini
                         ntr += num_data_mini
 
+                    break
                 else:
 
                     pred = model(data)
