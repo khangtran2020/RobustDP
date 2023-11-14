@@ -96,7 +96,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         optimizer.step()
 
                         new_model = init_model(args=args)
-                        model_list.append(new_model.load_state_dict(model.state_dict()))
+                        torch.save(model.state_dict(), args.model_path + f"model_{mit+1}_{model_name}")
+                        model_list.append(new_model.load_state_dict(torch.load(args.model_path + f"model_{mit+1}_{model_name}")))
 
                         pred = pred_fn(pred).detach()
                         metrics.update(pred, mini_targ)
@@ -149,7 +150,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 console.log(f"# of model: {len(model_list)}")
                 for i, m in enumerate(model_list):
                     print(m)
-                    torch.save(m.state_dict(), args.model_path + f"model_{i+1}_{model_name}")
                     m.eval()
 
                 with torch.no_grad():
