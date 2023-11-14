@@ -2,10 +2,9 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
-from torch.utils.data._utils.collate import default_collate
 from sklearn.model_selection import train_test_split
-from Data.utils import SubsetPoissonSampler, wrap_collate_with_empty, shape_safe, dtype_safe
 from Utils.console import console, log_table
+from opacus.data_loader import DPDataLoader
 
 def read_data(args, data_path='datasets/'):
 
@@ -25,24 +24,14 @@ def read_data(args, data_path='datasets/'):
         dataset_size = len(tr_dataset)
         indices = list(range(dataset_size))
         id_tr, id_va, _, _ = train_test_split(indices, target, test_size=0.15, stratify=target)
-        
-        if args.gen_mode == 'clean':
-            train_sampler = SubsetRandomSampler(id_tr)
-            collate_fn = None
-        else:
-            train_sampler = SubsetPoissonSampler(indices=id_tr, sample_rate=args.sp_rate)
-            sample_empty_shapes = [(0, *shape_safe(x)) for x in tr_dataset[0]]
-            dtypes = [dtype_safe(x) for x in tr_dataset[0]]
-            collate_fn = wrap_collate_with_empty(
-                collate_fn=default_collate,
-                sample_empty_shapes=sample_empty_shapes,
-                dtypes=dtypes
-            )
+        train_sampler = SubsetRandomSampler(id_tr)
         valid_sampler = SubsetRandomSampler(id_va)
 
-        tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=train_sampler, drop_last=True, collate_fn=collate_fn)
+        tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=train_sampler, drop_last=True)
         va_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=valid_sampler)
         te_loader = torch.utils.data.DataLoader(te_dataset, batch_size=args.bs)
+        if args.gen_mode == 'dp':
+            tr_loader = DPDataLoader.from_data_loader(tr_loader, generator=None, distributed=False)
         console.log(f"Finish generate dataloader")
 
         image, _ = next(iter(tr_loader))
