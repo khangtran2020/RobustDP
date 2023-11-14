@@ -60,8 +60,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 data, target = d
                 data = data.to(device)
                 target = target.to(device)
-                pred = model(data)
-                loss = objective(pred, target)
                 num_data = data.size(dim=0)
                 
                 if (epoch == args.epochs - 1) & (bi == num_step - 1):
@@ -73,13 +71,16 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         model.zero_grad()
                         optimizer.zero_grad()
 
-                        temp_loss = loss[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
+                        mini_data = data[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
+                        mini_targ = target[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
 
+                        pred = model(mini_data)
+                        loss = objective(mini_data, mini_targ)
                         saved_var = dict()
                         for tensor_name, tensor in model.named_parameters():
                             saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
-                        for li, los in enumerate(temp_loss):
+                        for li, los in enumerate(loss):
                             los.backward(retain_graph=True)
                             torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
                             for tensor_name, tensor in model.named_parameters():
@@ -95,8 +96,10 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         optimizer.step()
                         model_list.append(deepcopy(model))
 
-                    pred = pred_fn(pred).detach()
-                    metrics.update(pred, target)
+                        pred = pred_fn(pred).detach()
+                        metrics.update(pred, mini_targ)
+                        tr_loss += loss.detach().mean().item()*num_data_mini
+                        ntr += num_data_mini
 
                 else:
                     saved_var = dict()
@@ -121,8 +124,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     pred = pred_fn(pred).detach()
                     metrics.update(pred, target)
                     model = clip_weight(model=model, clip=args.clipw)
-                tr_loss += loss.detach().mean().item()*num_data
-                ntr += num_data
+                    tr_loss += loss.detach().mean().item()*num_data
+                    ntr += num_data
                 progress.advance(tk_up)
 
             tr_loss = tr_loss / ntr 

@@ -37,6 +37,7 @@ def add_dp_group(group):
     group.add_argument("--sp_rate", type=float, default=0.01, help='sampling rate for DP-SGD')
     group.add_argument('--max_bs', type=int, default=128, help="max physical batch size for opacus / dpsgd training")
     group.add_argument('--num_mo', type=int, default=100, help="# output model")
+    group.add_argument("--alpha", type=float, default=0.05, help='broken probability of certified robustness')
 
 def add_model_attack_group(group):
     group.add_argument("--att_mode", type=str, default='fsgm-clean', help="Attack mode", required=True)

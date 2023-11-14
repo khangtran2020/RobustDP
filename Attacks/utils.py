@@ -231,59 +231,67 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
 
     return radius_ls, cert_acc, arr
 
-def robust_eval_dp(args, model:list, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
+def hoeffding_bound(nobs, alpha, bonferroni_hyp_n=1):
+    return math.sqrt(math.log(bonferroni_hyp_n / alpha) / (2 * nobs))
+
+def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
 
     with console.status("Evaluating robustness") as status:
         # Accuracy counter
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         # Loop over all examples in test set
-        las_w = model.last_lay.weight.data.clone().detach()
-        print(f"Norm weight of the last layer: {torch.linalg.matrix_norm(las_w, ord=2).item()}, with size {las_w.size()}")
         # check_clipped(model=model, clip=1.0)
+
+        for m in model_list:
+            m.to(device)
+            m.eval()
+
         num_c = args.num_class
+        pred_fn = torch.nn.Softmax(dim=1) if num_c > 1 else torch.nn.Sigmoid()
 
         pred = torch.Tensor([]).to(device)
         gtar = torch.Tensor([]).to(device)
         crad = torch.Tensor([]).to(device)
+        bound = hoeffding_bound(nobs=args.num_mo, alpha=args.alpha, bonferroni_hyp_n=num_c)
+
         for i, batch in enumerate(te_loader):
 
             data, target = batch
             data, target = data.to(device), target.to(device)
             if args.att_mode.split('-')[0] == 'fgsm':
                 data.requires_grad = True
-            org_scores = model(data)
-            top_k, idx = torch.topk(input=org_scores, k=num_c)
-            wei = las_w[idx]
-            # console.log(f"weight diff size: {wei.size()}, since the idx has size: {idx.size}")
-            for j in range(1, num_c):
-                M = (wei[:, 0, :] - wei[:, j, :]).norm(p=2, dim=1)
-                rad = (top_k[:,0] - top_k[:,j]).abs().squeeze() / (M * math.sqrt(2))
-                # console.log(f"weight diff size: {M.size()}, score diff size: {(top_k[:,0] - top_k[:,j]).size()}")
-                if j == 1:
-                    radius = rad.clone()
-                else:
-                    radius = torch.min(radius, rad)
 
+            for mi, m in enumerate(model_list):
+                score = m(data)
+                if mi == 0:
+                    soft_score = pred_fn(score)
+                    org_scores = score.clone()
+                else:
+                    soft_score = soft_score + pred_fn(score)
+                    org_scores = org_scores + score.clone()
+
+            org_scores = org_scores / args.num_mo
+            soft_score = soft_score / args.num_mo
+            
+            top_k, idx = torch.topk(input=soft_score, k=2)
+            
+            lb = top_k[:, 0] - bound
+            ub = top_k[:, 1] + bound
+            abstain_mask = (lb > ub).int()
+            radius = (lb - ub) / (4 * (num_c - 1) * args.clipw)
             init_pred = org_scores.max(1, keepdim=True)[1]
+
             if args.data == 'mnist':
                 data_denorm = denorm(data, device=device)
             elif args.data == 'cifar10':
                 data_denorm = denorm(data, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
 
-            if args.att_mode.split('-')[0] == 'fgsm':
-                loss = torch.nn.CrossEntropyLoss()(org_scores, target)
-                model.zero_grad()
-                loss.backward()
-                data_grad = data.grad.data
-                adv_data = fgsm_attack(data_denorm, radius / args.img_sz**2, data_grad)
+            adv_data = pgd_attack_dp(image=data_denorm, label=target, steps=args.pgd_steps, model=model, rad=radius, alpha=2/255, device=device)
+            if args.data == 'mnist':
                 adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
-            elif args.att_mode.split('-')[0] == 'pgd':
-                adv_data = pgd_attack(image=data_denorm, label=target, steps=args.pgd_steps, model=model, rad=radius, alpha=2/255, device=device)
-                if args.data == 'mnist':
-                    adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
-                elif args.data == 'cifar10':
-                    adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
+            elif args.data == 'cifar10':
+                adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
 
             adv_scores = model(adv_data)
             final_pred = adv_scores.max(1, keepdim=True)[1]
