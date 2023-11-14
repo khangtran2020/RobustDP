@@ -2,9 +2,9 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
-from Utils.console import console, log_table
 from sklearn.model_selection import train_test_split
-import numpy as np
+from Data.utils import SubsetPoissonSampler
+from Utils.console import console, log_table
 
 def read_data(args, data_path='datasets/'):
 
@@ -24,7 +24,11 @@ def read_data(args, data_path='datasets/'):
         dataset_size = len(tr_dataset)
         indices = list(range(dataset_size))
         id_tr, id_va, _, _ = train_test_split(indices, target, test_size=0.15, stratify=target)
-        train_sampler = SubsetRandomSampler(id_tr)
+        
+        if args.gen_mode == 'clean':
+            train_sampler = SubsetRandomSampler(id_tr)
+        else:
+            train_sampler = SubsetPoissonSampler(indices=id_tr, sample_rate=args.sp_rate)
         valid_sampler = SubsetRandomSampler(id_va)
 
         tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.bs, sampler=train_sampler, drop_last=True)

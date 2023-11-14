@@ -231,7 +231,7 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
 
     return radius_ls, cert_acc, arr
 
-def robust_eval_dp(args, model:torch.nn.Module, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
+def robust_eval_dp(args, model:list, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
 
     with console.status("Evaluating robustness") as status:
         # Accuracy counter

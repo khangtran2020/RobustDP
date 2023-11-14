@@ -5,8 +5,6 @@ from rich.progress import Progress
 from typing import Dict
 from Models.modules.training_utils import EarlyStopping
 from Models.utils import lip_clip, clip_weight
-from opacus import PrivacyEngine
-from opacus.utils.batch_memory_manager import BatchMemoryManager
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
@@ -17,11 +15,11 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     if args.num_class > 1:
-        objective = torch.nn.CrossEntropyLoss().to(device)
+        objective = torch.nn.CrossEntropyLoss(reduction='none').to(device)
         pred_fn = torch.nn.Softmax(dim=1).to(device)
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
     else:
-        objective = torch.nn.BCEWithLogitsLoss().to(device)
+        objective = torch.nn.BCEWithLogitsLoss(reduction='none').to(device)
         pred_fn = torch.nn.Sigmoid().to(device)
         metrics = torchmetrics.classification.BinaryAccuracy().to(device)
 
@@ -32,17 +30,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
     model.to(device)
     model.train()
-
-    privacy_engine = PrivacyEngine()
-    model, optimizer, tr_loader = privacy_engine.make_private_with_epsilon(
-        module=model,
-        optimizer=optimizer,
-        data_loader=tr_loader,
-        epochs=args.epochs,
-        target_epsilon=args.eps,
-        target_delta=1e-5,
-        max_grad_norm=args.clip,
-    )
 
     # model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
 
@@ -67,46 +54,41 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             # train
             model.train()
             max_bs = args.max_bs if (epoch < args.epochs - 1) else args.bs / args.num_mo
-            with BatchMemoryManager(
-                    data_loader=tr_loader, 
-                    max_physical_batch_size=max_bs, 
-                    optimizer=optimizer
-                ) as memory_safe_data_loader:
-                for bi, d in enumerate(memory_safe_data_loader):
-                    # model = clipping_weight(model=model, clip=args.clipw, mode=args.gen_mode, lay_out_size=lay_out_size)
-                    if (epoch == args.epochs - 1) & (counter == len(tr_loader) - 1):
-                        # model.zero_grad()
-                        model.load_state_dict(torch.load(args.model_path + model_name))
-                        optimizer.zero_grad()
-                        data, target = d
-                        data = data.to(device)
-                        target = target.to(device)
-                        pred = model(data)
-                        loss = objective(pred, target)
-                        pred = pred_fn(pred)
-                        metrics.update(pred, target)
-                        loss.backward()
-                        optimizer._step_skip_queue = [False]
-                        optimizer.step()
-                        model_list.append(deepcopy(model))
-                    else:
-                        optimizer.zero_grad()
-                        data, target = d
-                        data = data.to(device)
-                        target = target.to(device)
-                        pred = model(data)
-                        loss = objective(pred, target)
-                        pred = pred_fn(pred)
-                        metrics.update(pred, target)
-                        loss.backward()
-                        opt_s1 = deepcopy(optimizer._step_skip_queue)
-                        optimizer.step()
-                        if opt_s1[0] == False: 
-                            counter += 1
-                            model = clip_weight(model=model, clip=args.clipw)
-                    tr_loss += loss.item()*pred.size(dim=0)
-                    ntr += pred.size(dim=0)
-                    progress.advance(tk_up)
+
+            for bi, d in enumerate(tr_loader):
+                if (epoch == args.epochs - 1) & (counter == len(tr_loader) - 1):
+                    # model.zero_grad()
+                    model.load_state_dict(torch.load(args.model_path + model_name))
+                    optimizer.zero_grad()
+                    data, target = d
+                    data = data.to(device)
+                    target = target.to(device)
+                    pred = model(data)
+                    loss = objective(pred, target)
+                    pred = pred_fn(pred)
+                    metrics.update(pred, target)
+                    loss.backward()
+                    optimizer._step_skip_queue = [False]
+                    optimizer.step()
+                    model_list.append(deepcopy(model))
+                else:
+                    optimizer.zero_grad()
+                    data, target = d
+                    data = data.to(device)
+                    target = target.to(device)
+                    pred = model(data)
+                    loss = objective(pred, target)
+                    pred = pred_fn(pred)
+                    metrics.update(pred, target)
+                    loss.backward()
+                    opt_s1 = deepcopy(optimizer._step_skip_queue)
+                    optimizer.step()
+                    if opt_s1[0] == False: 
+                        counter += 1
+                        model = clip_weight(model=model, clip=args.clipw)
+                tr_loss += loss.item()*pred.size(dim=0)
+                ntr += pred.size(dim=0)
+                progress.advance(tk_up)
             
             console.log(f"Counter: {counter}")
             tr_loss = tr_loss / ntr 

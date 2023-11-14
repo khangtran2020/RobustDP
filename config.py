@@ -33,6 +33,7 @@ def add_model_group(group):
 def add_dp_group(group):
     group.add_argument("--eps", type=float, default=1.0, help='target privacy budget')
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
+    group.add_argument("--sp_rate", type=float, default=0.01, help='sampling rate for DP-SGD')
     group.add_argument('--max_bs', type=int, default=128, help="max physical batch size for opacus / dpsgd training")
     group.add_argument('--num_mo', type=int, default=100, help="# output model")
 
