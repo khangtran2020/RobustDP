@@ -8,8 +8,8 @@ class SubsetPoissonSampler(Sampler[int]):
     
     indices: Sequence[int]
 
-    def __init__(self, indices: Sequence[int], sample_rate:float, generator=None) -> None:
-        self.indices = indices
+    def __init__(self, indices: Sequence[int], sample_rate:float, steps:int=None, generator=None) -> None:
+        self.indices = torch.LongTensor(indices)
         self.num_samples = len(indices)
         self.sample_rate = sample_rate
         self.generator = generator
@@ -20,15 +20,23 @@ class SubsetPoissonSampler(Sampler[int]):
                 "value, but got num_samples={}".format(self.num_samples)
             )
 
-    def __iter__(self) -> Iterator[int]:
-        mask = (
-            torch.rand(self.num_samples, generator=self.generator)
-            < self.sample_rate
-        )
-        idx = mask.nonzero(as_tuple=False).reshape(-1).tolist()
-        for i in idx:
-            yield self.indices[i]
+        if steps is not None:
+            self.steps = steps
+        else:
+            self.steps = int(1 / self.sample_rate)
 
-    def __len__(self) -> int:
-        return self.num_samples
+    def __iter__(self) -> Iterator[int]:
+
+        num_batches = self.steps
+        while num_batches > 0:
+            mask = (
+                torch.rand(self.num_samples, generator=self.generator)
+                < self.sample_rate
+            )
+            idx = mask.nonzero(as_tuple=False).reshape(-1).tolist()
+            yield self.indices[idx].tolist()
+            num_batches -= 1
+
+    def __len__(self):
+        return self.steps
     

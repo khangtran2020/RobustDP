@@ -52,37 +52,77 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             
             # train
             model.train()
+            num_step = len(tr_loader)
 
             for bi, d in enumerate(tr_loader):
-                if (epoch == args.epochs - 1):
-                    # model.zero_grad()
-                    model.load_state_dict(torch.load(args.model_path + model_name))
-                    optimizer.zero_grad()
-                    data, target = d
-                    data = data.to(device)
-                    target = target.to(device)
-                    pred = model(data)
-                    loss = objective(pred, target)
-                    pred = pred_fn(pred)
+                model.zero_grad()
+                optimizer.zero_grad()
+                data, target = d
+                data = data.to(device)
+                target = target.to(device)
+                pred = model(data)
+                loss = objective(pred, target)
+                num_data = data.size(dim=0)
+                
+                if (epoch == args.epochs - 1) & (bi == num_step - 1):
+                    
+                    num_data_mini = int(num_data / args.num_mo)
+
+                    for mit in range(args.num_mo):
+                        model.load_state_dict(torch.load(args.model_path + model_name))
+                        model.zero_grad()
+                        optimizer.zero_grad()
+
+                        temp_loss = loss[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
+
+                        saved_var = dict()
+                        for tensor_name, tensor in model.named_parameters():
+                            saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
+
+                        for li, los in enumerate(temp_loss):
+                            los.backward(retain_graph=True)
+                            torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
+                            for tensor_name, tensor in model.named_parameters():
+                                if tensor.grad is not None:
+                                    new_grad = tensor.grad
+                                    saved_var[tensor_name].add_(new_grad)
+                            model.zero_grad()
+
+                        for tensor_name, tensor in model.named_parameters():
+                            if tensor.grad is not None:
+                                saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
+                                tensor.grad = saved_var[tensor_name] / num_data_mini
+                        optimizer.step()
+                        model_list.append(deepcopy(model))
+
+                    pred = pred_fn(pred).detach()
                     metrics.update(pred, target)
-                    loss.backward()
-                    optimizer._step_skip_queue = [False]
-                    optimizer.step()
-                    model_list.append(deepcopy(model))
+
                 else:
-                    optimizer.zero_grad()
-                    data, target = d
-                    data = data.to(device)
-                    target = target.to(device)
-                    pred = model(data)
-                    loss = objective(pred, target)
-                    pred = pred_fn(pred)
-                    metrics.update(pred, target)
-                    loss.backward()
+                    saved_var = dict()
+                    for tensor_name, tensor in model.named_parameters():
+                        saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
+
+                    for li, los in enumerate(loss):
+                        los.backward(retain_graph=True)
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
+                        for tensor_name, tensor in model.named_parameters():
+                            if tensor.grad is not None:
+                                new_grad = tensor.grad
+                                saved_var[tensor_name].add_(new_grad)
+                        model.zero_grad()
+
+                    for tensor_name, tensor in model.named_parameters():
+                        if tensor.grad is not None:
+                            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
+                            tensor.grad = saved_var[tensor_name] / num_data
+
                     optimizer.step()
+                    pred = pred_fn(pred).detach()
+                    metrics.update(pred, target)
                     model = clip_weight(model=model, clip=args.clipw)
-                tr_loss += loss.item()*pred.size(dim=0)
-                ntr += pred.size(dim=0)
+                tr_loss += loss.detach().mean().item()*num_data
+                ntr += num_data
                 progress.advance(tk_up)
 
             tr_loss = tr_loss / ntr 
@@ -108,8 +148,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         target = target.to(device)
 
                         preds = None
-                        for mi, m in enumerate(model_list):
-                            if mi == 0:
+                        for miv, m in enumerate(model_list):
+                            if miv == 0:
                                 preds = m(data)
                             else:
                                 preds = preds + m(data)
@@ -119,7 +159,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         loss = objective(preds, target)
                         preds = pred_fn(preds)
                         metrics.update(preds, target)
-                        va_loss += loss.item()*preds.size(dim=0)
+                        va_loss += loss.mean().item()*preds.size(dim=0)
                         nva += preds.size(dim=0)
                         progress.advance(tk_ev)
             else:
@@ -133,7 +173,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         loss = objective(pred, target)
                         pred = pred_fn(pred)
                         metrics.update(pred, target)
-                        va_loss += loss.item()*pred.size(dim=0)
+                        va_loss += loss.mean().item()*pred.size(dim=0)
                         nva += pred.size(dim=0)
                         progress.advance(tk_ev)
 
