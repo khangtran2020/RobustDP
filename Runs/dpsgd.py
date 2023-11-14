@@ -176,6 +176,9 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         va_loss += loss.mean().item()*preds.size(dim=0)
                         nva += preds.size(dim=0)
                         progress.advance(tk_ev)
+                va_loss = va_loss / nva 
+                va_perf = metrics.compute().item()
+                metrics.reset()
             else:
                 model.eval()
                 with torch.no_grad():
