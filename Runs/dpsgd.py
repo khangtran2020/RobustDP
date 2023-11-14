@@ -104,7 +104,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 else:
 
                     pred = model(data)
-                    loss = objective(data, target)
+                    loss = objective(pred, target)
 
                     saved_var = dict()
                     for tensor_name, tensor in model.named_parameters():
