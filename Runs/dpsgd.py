@@ -96,7 +96,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         optimizer.step()
 
                         new_model = init_model(args=args)
-                        model_list.append(new_model.load_state_dict(model.state_dict))
+                        model_list.append(new_model.load_state_dict(model.state_dict()))
 
                         pred = pred_fn(pred).detach()
                         metrics.update(pred, mini_targ)
