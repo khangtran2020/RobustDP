@@ -102,6 +102,10 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                         ntr += num_data_mini
 
                 else:
+
+                    pred = model(data)
+                    loss = objective(data, target)
+
                     saved_var = dict()
                     for tensor_name, tensor in model.named_parameters():
                         saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
