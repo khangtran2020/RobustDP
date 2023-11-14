@@ -147,7 +147,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             if (epoch == args.epochs - 1):
                 console.log(f"# of model: {len(model_list)}")
                 for i, m in enumerate(model_list):
-                    torch.save(m.cpu().state_dict(), args.model_path + f"model_{i+1}_{model_name}")
+                    torch.save(m.state_dict(), args.model_path + f"model_{i+1}_{model_name}")
                     m.eval()
 
                 with torch.no_grad():
