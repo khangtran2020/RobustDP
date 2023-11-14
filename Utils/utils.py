@@ -75,7 +75,7 @@ def get_index_by_not_list(arr, test_arr):
 
 def print_args(args):
     arg_dict = {}
-    keys = ['gen_mode', 'data', 'data_mode', 'proj_name', 'img_sz', 'bs', 'debug', 'model', 'lr', 'bs', 
+    keys = ['gen_mode', 'data', 'data_mode', 'proj_name', 'img_sz', 'trbs', 'debug', 'model', 'lr', 'tebs', 
             'nlay', 'hdim', 'opt', 'dout', 'epochs', 'clipw', 'device', 'att_mode']
     for key in keys:
         arg_dict[f'{key}'] = f'{getattr(args, key)}'
