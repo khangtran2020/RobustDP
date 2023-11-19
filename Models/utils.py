@@ -92,4 +92,5 @@ def init_model(args):
         model = vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1)
     elif args.model == 'resnet18':
         model = resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
+    console.log(f"Training with model {args.model}: {model}")
     return model
