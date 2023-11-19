@@ -1,6 +1,8 @@
 import sys
 import math
 import torch
+import torchvision
+from torchvision.models import vgg16, vgg19, resnet18
 from Models.model import CNN
 from Utils.console import console
 
@@ -82,5 +84,12 @@ def check_clipped(model:torch.nn.Module, clip:float):
     return res
 
 def init_model(args):
-    model = CNN(channel=[32, 64], hid_dim=[256, 64], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=3, debug=args.debug)
+    if args.model == 'CNN':
+        model = CNN(channel=[32, 64], hid_dim=[256, 64], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=3, debug=args.debug)
+    elif args.model == 'vgg16':
+        model = vgg16(weights=torchvision.models.VGG16_Weights.IMAGENET1K_V1)
+    elif args.model == 'vgg19':
+        model = vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1)
+    elif args.model == 'resnet18':
+        model = resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
     return model
