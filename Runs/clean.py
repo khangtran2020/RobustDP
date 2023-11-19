@@ -11,6 +11,8 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
     
     model_name = '{}.pt'.format(name)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, 
+                                                           threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
 
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss().to(device)
@@ -56,8 +58,6 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 metrics.update(pred, target)
                 loss.backward()
                 optimizer.step()
-                # model = lip_clip(model=model, clip=args.clipw)
-                # model = clip_weight(model=model, clip=args.clipw)
                 tr_loss += loss.item()*pred.size(dim=0)
                 ntr += pred.size(dim=0)
                 progress.advance(tk_up)
@@ -65,6 +65,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
             metrics.reset()   
+            scheduler.step()
 
             va_loss = 0
             nva = 0

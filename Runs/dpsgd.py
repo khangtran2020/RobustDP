@@ -13,6 +13,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     
     model_name = '{}.pt'.format(name)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, 
+                                                           threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
 
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss(reduction='none').to(device)
@@ -142,7 +144,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
             metrics.reset()   
-           
+            scheduler.step()
 
             va_loss = 0
             nva = 0
