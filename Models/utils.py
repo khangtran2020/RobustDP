@@ -3,6 +3,8 @@ import math
 import torch
 import torchvision
 from torchvision.models import vgg16, vgg19, resnet18
+from torch.nn.utils import spectral_norm
+from Models.modules.spectral_norm import spectral_norm_conv
 from Models.model import CNN
 from Utils.console import console
 
@@ -90,6 +92,7 @@ def init_model(args):
         model = vgg16(weights=torchvision.models.VGG16_Weights.IMAGENET1K_V1)
         last_in = model.classifier[-1].in_features
         model.classifier[-1] = torch.nn.Linear(last_in, args.num_class)
+        model = init_pretrained(model=model)
     elif args.model == 'vgg19':
         model = vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1)
         last_in = model.fc.in_features
@@ -99,4 +102,12 @@ def init_model(args):
         last_in = model.fc.in_features
         model.fc = torch.nn.Linear(last_in, args.num_class)
     console.log(f"Training with model {args.model}: {model}")
+    return model
+
+def init_pretrained(model:torch.nn.Module):
+    for k, v in model.named_modules():
+        if isinstance(v, torch.nn.Conv2d):
+            setattr(model, k, spectral_norm_conv(module=v))
+        elif isinstance(v, torch.nn.Linear):
+            setattr(model, k, spectral_norm(module=v, n_power_iterations=100))
     return model
