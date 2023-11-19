@@ -105,11 +105,10 @@ def init_model(args):
     return model
 
 def init_pretrained(model:torch.nn.Module):
-    for k, v in model.named_modules():
-        if isinstance(v, torch.nn.Conv2d):
-            print(v, k)
-            setattr(model, k, spectral_norm_conv(module=v))
-        elif isinstance(v, torch.nn.Linear):
-            print(v, k)
-            setattr(model, k, spectral_norm(module=v, n_power_iterations=100))
+
+    for name, module in model.named_children():
+        if isinstance(module, torch.nn.Conv2d):
+            setattr(model, name, spectral_norm_conv(module=module))
+        elif isinstance(module, torch.nn.Linear):
+            setattr(model, name, spectral_norm(module=module, n_power_iterations=100))
     return model
