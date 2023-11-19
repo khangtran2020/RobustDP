@@ -64,8 +64,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
 
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
-            metrics.reset()   
-            scheduler.step()
+            metrics.reset()
 
             va_loss = 0
             nva = 0
@@ -87,6 +86,8 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             va_loss = va_loss / nva 
             va_perf = metrics.compute().item()
             metrics.reset()
+
+            scheduler.step(metrics=va_loss)
 
             results = {
                 "Target train/loss": tr_loss, 

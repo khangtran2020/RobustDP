@@ -144,7 +144,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             tr_loss = tr_loss / ntr 
             tr_perf = metrics.compute().item()
             metrics.reset()   
-            scheduler.step()
 
             va_loss = 0
             nva = 0
@@ -200,6 +199,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 va_perf = metrics.compute().item()
                 metrics.reset()
                 torch.save(model.state_dict(), args.model_path + model_name)
+
+            scheduler.step(metrics=va_loss)
 
             results = {
                 "Target epoch": epoch+1,
