@@ -107,6 +107,7 @@ def init_model(args):
 def init_pretrained(model:torch.nn.Module):
 
     for name, module in model.named_children():
+        console.log(f"Setting spectral norm to module: {name}")
         if isinstance(module, torch.nn.Conv2d):
             console.log(f"Setting spectral norm to module: {name}")
             setattr(model, name, spectral_norm_conv(module=module, debug=1))
