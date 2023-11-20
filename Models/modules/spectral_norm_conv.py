@@ -116,7 +116,7 @@ class SpectralNormConv:
             console.log(f"Sigma: {sigma}")
 
         if sigma > 1.0:
-            weight = weight * 0.8 * sigma/ sigma
+            weight = weight * 0.8 * sigma / sigma
         return weight
 
     def remove(self, module: Module) -> None:

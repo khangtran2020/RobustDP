@@ -5,6 +5,7 @@ import torch
 from torch.nn.functional import normalize
 from typing import Any, Optional, TypeVar
 from torch.nn import Module
+from Utils.console import console
 
 
 T_module = TypeVar('T_module', bound=Module)
@@ -27,7 +28,7 @@ class SpectralNorm:
     n_power_iterations: int
     eps: float
 
-    def __init__(self, name: str = 'weight', n_power_iterations: int = 1, dim: int = 0, eps: float = 1e-12) -> None:
+    def __init__(self, name: str = 'weight', n_power_iterations: int = 1, dim: int = 0, eps: float = 1e-12, debug:bool=False) -> None:
         self.name = name
         self.dim = dim
         if n_power_iterations <= 0:
@@ -35,6 +36,7 @@ class SpectralNorm:
                              f'got n_power_iterations={n_power_iterations}')
         self.n_power_iterations = n_power_iterations
         self.eps = eps
+        self.debug = debug
 
     def reshape_weight_to_matrix(self, weight: torch.Tensor) -> torch.Tensor:
         weight_mat = weight
@@ -94,7 +96,8 @@ class SpectralNorm:
                     v = v.clone(memory_format=torch.contiguous_format)
 
         sigma = torch.dot(u, torch.mv(weight_mat, v))
-
+        if self.debug:
+            console.log(f"Sigma: {sigma}")
         if sigma > 1.0:
             weight = weight * 0.8 * sigma / sigma
         return weight
@@ -119,12 +122,12 @@ class SpectralNorm:
         return v.mul_(target_sigma / torch.dot(u, torch.mv(weight_mat, v)))
 
     @staticmethod
-    def apply(module: Module, name: str, n_power_iterations: int, dim: int, eps: float) -> 'SpectralNorm':
+    def apply(module: Module, name: str, n_power_iterations: int, dim: int, eps: float, debug: bool) -> 'SpectralNorm':
         for hook in module._forward_pre_hooks.values():
             if isinstance(hook, SpectralNorm) and hook.name == name:
                 raise RuntimeError(f"Cannot register two spectral_norm hooks on the same parameter {name}")
 
-        fn = SpectralNorm(name, n_power_iterations, dim, eps)
+        fn = SpectralNorm(name, n_power_iterations, dim, eps, debug=debug)
         weight = module._parameters[name]
         if weight is None:
             raise ValueError(f'`SpectralNorm` cannot be applied as parameter `{name}` is None')
@@ -217,7 +220,8 @@ def spectral_norm(module: T_module,
                   name: str = 'weight',
                   n_power_iterations: int = 1,
                   eps: float = 1e-12,
-                  dim: Optional[int] = None) -> T_module:
+                  dim: Optional[int] = None, 
+                  debug:bool = False) -> T_module:
     r"""Applies spectral normalization to a parameter in the given module.
 
     .. math::
@@ -274,7 +278,7 @@ def spectral_norm(module: T_module,
             dim = 1
         else:
             dim = 0
-    SpectralNorm.apply(module, name, n_power_iterations, dim, eps)
+    SpectralNorm.apply(module, name, n_power_iterations, dim, eps, debug)
     return module
 
 def remove_spectral_norm(module: T_module, name: str = 'weight') -> T_module:
