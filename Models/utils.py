@@ -3,8 +3,8 @@ import math
 import torch
 import torchvision
 from torchvision.models import vgg16, vgg19, resnet18
-from torch.nn.utils import spectral_norm
-from Models.modules.spectral_norm import spectral_norm_conv
+from Models.modules.spectral_norm_conv import spectral_norm_conv
+from Models.modules.spectral_norm import spectral_norm
 from Models.model import CNN
 from Utils.console import console
 
