@@ -137,16 +137,6 @@ class SpectralNormConv:
 
     def __call__(self, module: Module, inputs: Any) -> None:
         new_weight = self.compute_weight(module, do_power_iteration=module.training)
-        if self.debug:
-            _, _, h, w = new_weight.shape
-            mat1, mat2, mat3, mat4 = _conv_matrices(conv_filter=new_weight)
-            console.log(f"Matrix 1: {mat1.max()}, {mat1.min()}")
-            console.log(f"Matrix 2: {mat2.max()}, {mat2.min()}")
-            console.log(f"Matrix 3: {mat3.max()}, {mat3.min()}")
-            console.log(f"Matrix 4: {mat4.max()}, {mat4.min()}")
-            a = math.sqrt(h*w)
-            min_v = min([matrix_norm(mat1, ord=2).item(), matrix_norm(mat2, ord=2).item(), matrix_norm(mat3, ord=2).item(), matrix_norm(mat4, ord=2).item()])
-            console.log(f"Layer {self.name}: {a * min_v}")
         setattr(module, self.name, new_weight)
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
