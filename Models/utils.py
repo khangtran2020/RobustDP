@@ -92,7 +92,16 @@ def init_model(args):
         model = vgg16(weights=torchvision.models.VGG16_Weights.IMAGENET1K_V1)
         last_in = model.classifier[-1].in_features
         model.classifier[-1] = torch.nn.Linear(last_in, args.num_class)
-        model = init_pretrained(model=model)
+
+        for name, module in model.named_children():
+            for sname, smodule in module.named_children():
+                if isinstance(smodule, torch.nn.Conv2d):
+                    setattr(module, sname, spectral_norm_conv(module=smodule, debug=args.debug))
+                elif isinstance(smodule, torch.nn.Linear):
+                    setattr(module, sname, spectral_norm(module=smodule, n_power_iterations=100))
+            setattr(model, name, module)            
+
+
     elif args.model == 'vgg19':
         model = vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1)
         last_in = model.fc.in_features
@@ -104,16 +113,16 @@ def init_model(args):
     console.log(f"Training with model {args.model}: {model}")
     return model
 
-def init_pretrained(model:torch.nn.Module):
+# def init_pretrained(model:torch.nn.Module):
 
-    for name, module in model.named_children():
-        console.log(f"Setting spectral norm to module: {name} - which is {module}")
-        for name_sub, submodule in module.named_children():
-            console.log(f"Setting spectral norm to sub-module: {name_sub} - which is {submodule}")
-        # if isinstance(module, torch.nn.Conv2d):
-        #     console.log(f"Setting spectral norm to module: {name}")
-        #     setattr(model, name, spectral_norm_conv(module=module, debug=1))
-        # elif isinstance(module, torch.nn.Linear):
-        #     console.log(f"Setting spectral norm to module: {name}")
-        #     setattr(model, name, spectral_norm(module=module, n_power_iterations=100))
-    return model
+#     for name, module in model.named_children():
+#         console.log(f"Setting spectral norm to module: {name} - which is {module}")
+#         for name_sub, submodule in module.named_children():
+#             console.log(f"Setting spectral norm to sub-module: {name_sub} - which is {submodule}")
+#         # if isinstance(module, torch.nn.Conv2d):
+#         #     console.log(f"Setting spectral norm to module: {name}")
+#         #     setattr(model, name, spectral_norm_conv(module=module, debug=1))
+#         # elif isinstance(module, torch.nn.Linear):
+#         #     console.log(f"Setting spectral norm to module: {name}")
+#         #     setattr(model, name, spectral_norm(module=module, n_power_iterations=100))
+#     return model
