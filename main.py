@@ -28,13 +28,14 @@ def run(args, date, device):
 
         console.log(model.state_dict)
         with console.status("Testing comparable of considered model") as status:
-            console.log(f"Model: {model}")
-            for n, p in model.named_parameters():
-                console.log(f"Size of param {n}: {p.size()}") 
-            image, _ = next(iter(tr_loader))
-            out_put = model(image)
-            console.log(f"Output dimension: {out_put.size()}, with value: {out_put}")
-            console.log(f'[bold][green]Done testing comparable of considered mode: :white_check_mark:')
+            with torch.no_grad():
+                console.log(f"Model: {model}")
+                for n, p in model.named_parameters():
+                    console.log(f"Size of param {n}: {p.size()}") 
+                image, _ = next(iter(tr_loader))
+                out_put = model(image)
+                console.log(f"Output dimension: {out_put.size()}, with value: {out_put}")
+                console.log(f'[bold][green]Done testing comparable of considered mode: :white_check_mark:')
         # model = lip_clip(model=model, clip=args.clipw)
         # model = clip_weight(model=model, clip=args.clipw)
         # checked = check_clipped(model=model, clip=args.clipw)
