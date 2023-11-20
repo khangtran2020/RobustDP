@@ -98,7 +98,7 @@ def init_model(args):
                 if isinstance(smodule, torch.nn.Conv2d):
                     setattr(module, sname, spectral_norm_conv(module=smodule, debug=args.debug))
                 elif isinstance(smodule, torch.nn.Linear):
-                    setattr(module, sname, spectral_norm(module=smodule, n_power_iterations=100))
+                    setattr(module, sname, spectral_norm(module=smodule, n_power_iterations=100, debug=args.debug))
             setattr(model, name, module)            
 
 
