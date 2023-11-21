@@ -114,7 +114,7 @@ class SpectralNormConv:
 
         sigma = math.sqrt(h*w) * torch.min(sigma1, torch.min(sigma2, torch.min(sigma3, sigma4))).item()
         if (sigma > 1.0) & do_power_iteration:
-            reduce = max(0.9**(self.step), 1/sigma)
+            reduce = max(0.98**(self.step), 1/sigma)
             # weight = weight * reduce * sigma / sigma
             weight = weight / sigma
             self.step += 1

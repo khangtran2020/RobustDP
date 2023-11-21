@@ -98,7 +98,7 @@ class SpectralNorm:
 
         sigma = torch.dot(u, torch.mv(weight_mat, v))
         if (sigma > 1.0) & do_power_iteration:
-            reduce = max(0.9**(self.step), 1/sigma)
+            reduce = max(0.98**(self.step), 1/sigma)
             # weight = weight * reduce * sigma / sigma
             weight = weight / sigma
             self.step += 1
