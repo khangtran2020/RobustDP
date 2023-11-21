@@ -100,7 +100,7 @@ class SpectralNorm:
         if self.debug:
             console.log(f"Sigma: {sigma}")
         if (sigma > 1.0) & do_power_iteration:
-            reduce = 0.9 ** (self.step)
+            reduce = max(0.9**(self.step), 1/sigma)
             weight = weight * reduce * sigma / sigma
             self.step += 1
         return weight
