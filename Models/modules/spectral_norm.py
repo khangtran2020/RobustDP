@@ -97,12 +97,12 @@ class SpectralNorm:
                     v = v.clone(memory_format=torch.contiguous_format)
 
         sigma = torch.dot(u, torch.mv(weight_mat, v))
-        if self.debug:
-            console.log(f"Sigma: {sigma}")
         if (sigma > 1.0) & do_power_iteration:
             reduce = max(0.9**(self.step), 1/sigma)
             weight = weight * reduce * sigma / sigma
             self.step += 1
+            if self.debug:
+                console.log(f"Sigma: {sigma}, reduction: {reduce}")
         return torch.nn.Parameter(weight)
 
     def remove(self, module: Module) -> None:
