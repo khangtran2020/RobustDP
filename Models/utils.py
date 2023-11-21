@@ -96,13 +96,13 @@ def init_model(args):
         last_in = model.classifier[-1].in_features
         model.classifier[-1] = torch.nn.Linear(last_in, args.num_class)
 
-        for name, module in model.named_children():
-            for sname, smodule in module.named_children():
-                if isinstance(smodule, torch.nn.Conv2d):
-                    setattr(module, sname, spectral_norm_conv(module=smodule, debug=args.debug))
-                elif isinstance(smodule, torch.nn.Linear):
-                    setattr(module, sname, spectral_norm(module=smodule, n_power_iterations=100, debug=args.debug))
-            setattr(model, name, module)            
+        # for name, module in model.named_children():
+        #     for sname, smodule in module.named_children():
+        #         if isinstance(smodule, torch.nn.Conv2d):
+        #             setattr(module, sname, spectral_norm_conv(module=smodule, debug=args.debug))
+        #         elif isinstance(smodule, torch.nn.Linear):
+        #             setattr(module, sname, spectral_norm(module=smodule, n_power_iterations=100, debug=args.debug))
+        #     setattr(model, name, module)            
     elif args.model == 'vgg19':
         model = vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1)
         last_in = model.fc.in_features
