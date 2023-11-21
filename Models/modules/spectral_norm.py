@@ -103,7 +103,7 @@ class SpectralNorm:
             reduce = max(0.9**(self.step), 1/sigma)
             weight = weight * reduce * sigma / sigma
             self.step += 1
-        return weight
+        return torch.nn.Parameter(weight)
 
     def remove(self, module: Module) -> None:
         with torch.no_grad():
