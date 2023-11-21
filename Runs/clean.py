@@ -10,7 +10,7 @@ from Utils.tracking import tracker_log, wandb
 def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, 
                                                         #    threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
 
