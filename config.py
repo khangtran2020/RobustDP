@@ -18,6 +18,7 @@ def add_data_group(group):
 
 def add_model_group(group):
     group.add_argument("--model", type=str, default='cnn', help="Model type")
+    group.add_argument("--pretrained", type=int, default=1, help="model pretrained or not")
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
     group.add_argument('--trbs', type=int, default=512, help="batch size for training process")
     group.add_argument('--tebs', type=int, default=512, help="batch size for testing process")

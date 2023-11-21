@@ -36,6 +36,7 @@ class SpectralNorm:
                              f'got n_power_iterations={n_power_iterations}')
         self.n_power_iterations = n_power_iterations
         self.eps = eps
+        self.step = 0
         self.debug = debug
 
     def reshape_weight_to_matrix(self, weight: torch.Tensor) -> torch.Tensor:
@@ -98,8 +99,10 @@ class SpectralNorm:
         sigma = torch.dot(u, torch.mv(weight_mat, v))
         if self.debug:
             console.log(f"Sigma: {sigma}")
-        if sigma > 1.0:
-            weight = weight * 0.8 * sigma / sigma
+        if (sigma > 1.0) & do_power_iteration:
+            reduce = 0.9 ** (self.step)
+            weight = weight * reduce * sigma / sigma
+            self.step += 1
         return weight
 
     def remove(self, module: Module) -> None:
