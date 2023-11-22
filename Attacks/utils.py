@@ -98,6 +98,14 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                     adv_img = adv_data[:num_plot].permute(0, 2, 3, 1)
                     adv_scr = adv_scores[:num_plot]
                     adv_prd = final_pred[:num_plot]
+                elif args.data == 'utk':
+                    org_img = data[:num_plot]
+                    org_scr = org_scores[:num_plot]
+                    org_prd = init_pred[:num_plot]
+
+                    adv_img = adv_data[:num_plot]
+                    adv_scr = adv_scores[:num_plot]
+                    adv_prd = final_pred[:num_plot]
                 labels = target[:num_plot]
                 rads = radius[:num_plot]
 
