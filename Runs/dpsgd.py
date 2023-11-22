@@ -68,6 +68,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 
                 with torch.no_grad():
                     for name, module in model.named_children():
+                        if 'last_lay' in name: continue
                         if isinstance(module, torch.nn.Linear):
                             setattr(model, name, remove_spectral_norm(module))
                         elif isinstance(module, torch.nn.Conv2d):
@@ -148,7 +149,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 optimizer.step()
                 pred = pred_fn(pred).detach()
                 metrics.update(pred, target)
-                # model = clip_weight(model=model, clip=args.clipw)
+                model = clip_weight(model=model, clip=args.clipw)
                 tr_loss += loss.detach().mean().item()*num_data
                 ntr += num_data
                 torch.save(model.state_dict(), args.model_path + model_name)
