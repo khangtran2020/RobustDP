@@ -29,8 +29,9 @@ class SpectralNormConv:
     dim: int
     n_power_iterations: int
     eps: float
+    thres: float
 
-    def __init__(self, name: str = 'weight', n_power_iterations: int = 50, dim: int = 0, eps: float = 1e-12, debug=False) -> None:
+    def __init__(self, name: str = 'weight', n_power_iterations: int = 50, dim: int = 0, eps: float = 1e-12, debug:bool=False, thres:float=1.0) -> None:
         self.name = name
         self.dim = dim
         if n_power_iterations <= 0:
@@ -39,7 +40,7 @@ class SpectralNormConv:
         self.n_power_iterations = n_power_iterations
         self.eps = eps
         self.debug = debug
-        self.step = 0
+        self.thres = thres
 
     def reshape_weight_to_matrix(self, weight: torch.Tensor) -> torch.Tensor:
         weight_mat = weight
@@ -113,14 +114,9 @@ class SpectralNormConv:
         sigma4 = torch.dot(u4, torch.mv(mat4, v4))
 
         sigma = math.sqrt(h*w) * torch.min(sigma1, torch.min(sigma2, torch.min(sigma3, sigma4))).item()
-        if (sigma > 1.0) & do_power_iteration:
-            reduce = max(0.98**(self.step), 1/sigma)
-            # weight = weight * reduce * sigma / sigma
-            weight = weight / sigma
-            self.step += 1
-            if self.debug:
-                console.log(f"Sigma: {sigma}, reduction: {reduce}")
-        return torch.nn.Parameter(weight)
+        c = min(1, self.thres / (sigma + 1e-12))
+        weight = weight * c
+        return weight
 
     def remove(self, module: Module) -> None:
         with torch.no_grad():
@@ -141,20 +137,19 @@ class SpectralNormConv:
         module.register_parameter(self.name, torch.nn.Parameter(weight.detach()))
 
     def __call__(self, module: Module, inputs: Any) -> None:
-        new_weight = self.compute_weight(module, do_power_iteration=module.training)
-        setattr(module, self.name, new_weight)
+        setattr(module, self.name, self.compute_weight(module, do_power_iteration=module.training))
 
     def _solve_v_and_rescale(self, weight_mat, u, target_sigma):
         v = torch.linalg.multi_dot([weight_mat.t().mm(weight_mat).pinverse(), weight_mat.t(), u.unsqueeze(1)]).squeeze(1)
         return v.mul_(target_sigma / torch.dot(u, torch.mv(weight_mat, v)))
 
     @staticmethod
-    def apply(module: Module, name: str, n_power_iterations: int, dim: int, eps: float, debug: bool) -> 'SpectralNormConv':
+    def apply(module: Module, name: str, n_power_iterations: int, dim: int, eps: float, debug: bool, thres: float) -> 'SpectralNormConv':
         for hook in module._forward_pre_hooks.values():
             if isinstance(hook, SpectralNormConv) and hook.name == name:
                 raise RuntimeError(f"Cannot register two spectral_norm hooks on the same parameter {name}")
 
-        fn = SpectralNormConv(name, n_power_iterations, dim, eps, debug)
+        fn = SpectralNormConv(name, n_power_iterations, dim, eps, debug=debug, thres=thres)
         weight = module._parameters[name]
         if weight is None:
             raise ValueError(f'`SpectralNorm` cannot be applied as parameter `{name}` is None')
@@ -285,7 +280,8 @@ def spectral_norm_conv(module: T_module,
                   n_power_iterations: int = 100,
                   eps: float = 1e-12,
                   dim: Optional[int] = None, 
-                  debug:bool=False) -> T_module:
+                  debug:bool=False, 
+                  thres:float=1.0) -> T_module:
     r"""Applies spectral normalization to a parameter in the given module.
 
     .. math::
@@ -342,7 +338,7 @@ def spectral_norm_conv(module: T_module,
             dim = 1
         else:
             dim = 0
-    SpectralNormConv.apply(module, name, n_power_iterations, dim, eps, debug=debug)
+    SpectralNormConv.apply(module, name, n_power_iterations, dim, eps, debug=debug, thres=thres)
     return module
 
 def remove_spectral_norm_conv(module: T_module, name: str = 'weight') -> T_module:

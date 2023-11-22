@@ -1,10 +1,13 @@
 import torch
 import torchvision
+import numpy as np
+import pandas as pd
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 from sklearn.model_selection import train_test_split
 from Utils.console import console, log_table
 from opacus.data_loader import DPDataLoader
+from Data.dataset import Data
 
 def read_data(args, data_path='datasets/'):
 
@@ -17,6 +20,9 @@ def read_data(args, data_path='datasets/'):
         elif args.data == 'cifar10':
             tr_dataset, te_dataset = get_cifar(path=data_path+args.data, size=args.img_sz)
             target = torch.Tensor(tr_dataset.targets)
+        elif args.data == 'utk':
+            tr_dataset, te_dataset = get_utk(seed=args.seed)
+            target = tr_dataset.y.int().clone()
 
         args.num_class = target.unique().size(dim=0)
         target = target.tolist()
@@ -85,3 +91,33 @@ def get_cifar(path:str, size:int):
     te_dataset = torchvision.datasets.CIFAR10(root=path, train=False, download=True, transform=transform)
 
     return tr_dataset, te_dataset
+
+def get_utk(seed:int):
+
+    utk_data_path = "dataset/utk/age_gender.gz"
+    label = 'ethnicity'
+    protect = 'gender'
+    pd00 = pd.read_csv(utk_data_path, compression='gzip')
+    pd00[label] = pd00[label].apply(lambda x: x!=0).astype(int)
+    n_class = 2
+    y = pd00[label].values
+    np.random.seed(0)  # random seed of partition data into train/test
+    tr_df, te_df, _, _  = train_test_split(pd00, y,  test_size=0.2, stratify=y, random_state=seed)
+    tr_df = tr_df.reset_index(drop=True)
+    te_df = te_df.reset_index(drop=True)
+
+    X_tr = get_pixel(df=tr_df)
+    X_te = get_pixel(df=te_df)
+
+    tr_dataset = Data(X=X_tr, y=tr_df[label].values)
+    te_dataset = Data(X=X_te, y=te_df[label].values)
+
+    return tr_dataset, te_dataset
+
+def get_pixel(df:pd.DataFrame):
+    X = df.pixels.apply(lambda x: np.array(x.split(" "), dtype=float))
+    X = np.stack(X)
+    X = X / 255.0
+    X = X.astype('float32').reshape(X.shape[0], 1, 48, 48)
+    return X
+

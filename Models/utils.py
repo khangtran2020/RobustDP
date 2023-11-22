@@ -86,15 +86,16 @@ def check_clipped(model:torch.nn.Module, clip:float):
     return res
 
 def init_model(args):
+    out_dim = 1 if args.num_class < 3 else args.num_class
     if args.model == 'CNN':
-        model = CNN(channel=[32, 64], hid_dim=[256, 64], img_size=args.img_sz, channel_in=args.channel_in, out_dim=args.num_class, kernal_size=3, debug=args.debug)
+        model = CNN(channel=[32, 64], hid_dim=[256, 64], img_size=args.img_sz, channel_in=args.channel_in, out_dim=out_dim, kernal_size=3, debug=args.debug)
     elif args.model == 'vgg16':
         if args.pretrained > 0:
             model = vgg16(weights=torchvision.models.VGG16_Weights.IMAGENET1K_V1)
         else:
             model = vgg16(weights=None)
         last_in = model.classifier[-1].in_features
-        model.classifier[-1] = torch.nn.Linear(last_in, args.num_class)
+        model.classifier[-1] = torch.nn.Linear(last_in, out_dim)
 
         for name, module in model.named_children():
             for sname, smodule in module.named_children():
@@ -106,7 +107,7 @@ def init_model(args):
     elif args.model == 'vgg19':
         model = vgg19(weights=torchvision.models.VGG19_Weights.IMAGENET1K_V1)
         last_in = model.fc.in_features
-        model.fc = torch.nn.Linear(last_in, args.num_class)
+        model.fc = torch.nn.Linear(last_in, out_dim)
     elif args.model == 'resnet18':
         model = resnet18(weights=torchvision.models.ResNet18_Weights.IMAGENET1K_V1)
         last_in = model.fc.in_features
