@@ -22,7 +22,7 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
         metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         # Loop over all examples in test set
         las_w = model.last_lay.weight.data.clone().detach()
-        print(f"Norm weight of the last layer: {torch.linalg.matrix_norm(las_w, ord=2).item()}, with size {las_w.size()}")
+        console.log(f"Norm weight of the last layer: {las_w}, with size {las_w.size()}")
         # check_clipped(model=model, clip=1.0)
         num_c = args.num_class
 
