@@ -23,8 +23,8 @@ def run(args, date, device):
     model = init_model(args=args)
     
     if args.debug > 0:
-        for n, p in model.named_parameters():
-            console.log(f"Layer {n}: {p.size()}")
+        for n, p in model.named_modules():
+            console.log(f"Layer {n}: {p}")
 
         console.log(model.state_dict)
         with console.status("Testing comparable of considered model") as status:

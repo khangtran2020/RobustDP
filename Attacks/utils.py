@@ -17,6 +17,8 @@ from Utils.utils import get_index_by_value
 def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
 
     with console.status("Evaluating robustness") as status:
+
+        model.eval()
         # Accuracy counter
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
