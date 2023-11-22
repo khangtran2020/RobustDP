@@ -53,6 +53,8 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
                 data_denorm = denorm(data, device=device)
             elif args.data == 'cifar10':
                 data_denorm = denorm(data, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
+            elif args.data == 'utk':
+                data_denorm = data 
 
             if args.att_mode.split('-')[0] == 'fgsm':
                 loss = torch.nn.CrossEntropyLoss()(org_scores, target)
