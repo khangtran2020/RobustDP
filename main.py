@@ -23,7 +23,7 @@ def run(args, date, device):
     model = init_model(args=args)
     
     if args.debug > 0:
-        for n, p in model.named_modules():
+        for n, p in model.named_children():
             console.log(f"Layer {n}: {p}")
 
         console.log(model.state_dict)
