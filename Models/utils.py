@@ -43,7 +43,7 @@ def lip_clip(model:torch.nn.Module, clip:float):
     return model
 
 def clip_weight(model:torch.nn.Module, clip:float):
-    console.log(f"Is there NaN in weight: {torch.isnan(model.last_lay.weight.data).sum().item()}")
+    console.log(f"Is there NaN in weight: {torch.isnan(model.last_lay.weight.data.clone()).sum().item()}")
     norm = torch.linalg.matrix_norm(model.last_lay.weight.data, ord=2).item()
     if norm > clip:
         model.last_lay.weight.data = model.last_lay.weight.data / (norm + 1e-12)
