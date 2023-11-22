@@ -37,10 +37,10 @@ def read_data(args, data_path='datasets/'):
         va_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.trbs, sampler=valid_sampler)
         te_loader = torch.utils.data.DataLoader(te_dataset, batch_size=args.tebs)
         if args.gen_mode == 'dp':
-            tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=int(args.sp_rate * len(id_tr)), sampler=train_sampler, drop_last=True)
-            tr_loader = DPDataLoader.from_data_loader(tr_loader, generator=None, distributed=False)
+            tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=int(args.sp_rate * len(id_tr)), sampler=train_sampler, shuffle=True, drop_last=True)
+            # tr_loader = DPDataLoader.from_data_loader(tr_loader, generator=None, distributed=False)
         else:
-            tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.trbs, sampler=train_sampler, drop_last=True)
+            tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=args.trbs, sampler=train_sampler, shuffle=True, drop_last=True)
         console.log(f"Finish generate dataloader")
 
         image, _ = next(iter(tr_loader))
