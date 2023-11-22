@@ -80,7 +80,9 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                                 elif isinstance(smodule, torch.nn.Conv2d):
                                     setattr(module, sname, remove_spectral_norm_conv(smodule))
                             setattr(model, name, module)
+                    
                     model = lip_clip(model=model, clip=args.clipw)
+                    torch.save(model.state_dict(), args.model_path + model_name)
                 model.train()
                 num_data_mini = int(num_data / args.num_mo)
                 for mit in range(args.num_mo):
