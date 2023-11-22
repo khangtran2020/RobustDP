@@ -52,7 +52,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 data, target = d
                 data = data.to(device)
                 target = target.to(device)
-                console.log(target)
+                # console.log(target)
                 pred = model(data)
                 loss = objective(pred, target)
                 pred = pred_fn(pred)
