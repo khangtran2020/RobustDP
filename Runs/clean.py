@@ -14,7 +14,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, 
                                                            threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
 
-    if args.num_class > 1:
+    if args.outdim > 1:
         objective = torch.nn.CrossEntropyLoss().to(device)
         pred_fn = torch.nn.Softmax(dim=1).to(device)
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
@@ -53,6 +53,8 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 data = data.to(device)
                 target = target.to(device)
                 pred = model(data)
+                if args.outdim == 1:
+                    pred = pred.squeeze(dim=-1)
                 loss = objective(pred, target)
                 pred = pred_fn(pred)
                 metrics.update(pred, target)
@@ -76,6 +78,8 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                     data = data.to(device)
                     target = target.to(device)
                     pred = model(data)
+                    if args.outdim == 1:
+                        pred = pred.squeeze(dim=-1)
                     loss = objective(pred, target)
                     pred = pred_fn(pred)
                     metrics.update(pred, target)
