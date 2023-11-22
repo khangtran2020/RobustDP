@@ -51,7 +51,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 model.zero_grad()
                 data, target = d
                 data = data.to(device)
-                target = target.long().to(device)
+                target = target.to(device)
                 pred = model(data)
                 loss = objective(pred, target)
                 pred = pred_fn(pred)
@@ -74,7 +74,7 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 for bi, d in enumerate(va_loader):
                     data, target = d
                     data = data.to(device)
-                    target = target.long().to(device)
+                    target = target.to(device)
                     pred = model(data)
                     loss = objective(pred, target)
                     pred = pred_fn(pred)
