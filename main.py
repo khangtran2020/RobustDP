@@ -26,10 +26,10 @@ def run(args, date, device):
         for n, p in model.named_children():
             console.log(f"Layer {n}: {p}")
 
-        console.log(model.state_dict)
+        # console.log(model.state_dict)
         with console.status("Testing comparable of considered model") as status:
             with torch.no_grad():
-                console.log(f"Model: {model}")
+                # console.log(f"Model: {model}")
                 for n, p in model.named_parameters():
                     console.log(f"Size of param {n}: {p.size()}") 
                 image, _ = next(iter(tr_loader))
