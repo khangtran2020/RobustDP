@@ -94,7 +94,7 @@ def get_cifar(path:str, size:int):
 
 def get_utk(seed:int):
 
-    utk_data_path = "dataset/utk/age_gender.gz"
+    utk_data_path = "datasets/utk/age_gender.gz"
     label = 'ethnicity'
     protect = 'gender'
     pd00 = pd.read_csv(utk_data_path, compression='gzip')
