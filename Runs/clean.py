@@ -136,8 +136,6 @@ def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, de
         # validation
         model.eval()
         with torch.no_grad():
-            
-            model, sigma = lip_clip(model=model, clip=args.clipw)
 
             for bi, d in enumerate(te_loader):
                 data, target = d

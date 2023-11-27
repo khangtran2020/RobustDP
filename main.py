@@ -9,6 +9,7 @@ from Models.utils import init_model
 from Runs.clean import train, evalt
 from Runs.dpsgd import traindp, evaltdp
 from Attacks.utils import robust_eval_clean, robust_eval_dp
+from Models.utils import lip_clip
 from Utils.utils import print_args, seed_everything, init_history, get_name, save_dict
 from Utils.console import console
 from Utils.tracking import init_tracker
@@ -41,11 +42,15 @@ def run(args, date, device):
     # train the model
     if args.gen_mode == 'clean':
         model, model_hist = train(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
+        with torch.no_grad():
+            model, sigma = lip_clip(model=model, clip=args.clipw)
         model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
         torch.cuda.empty_cache()
         robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=50, history=att_hist)
     else:
         model_list, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
+        for i in range(len(model_list)):
+            model_list[i] = lip_clip(model=model_list[i], clip=args.clipw)
         model_hist = evaltdp(args=args, te_loader=te_loader, model_list=model_list, device=device, history=model_hist)
         torch.cuda.empty_cache()
         robust_eval_dp(args=args, model_list=model_list, device=torch.device('cpu'), te_loader=te_loader, num_plot=50, history=att_hist)
