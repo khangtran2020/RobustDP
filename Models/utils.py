@@ -10,37 +10,37 @@ from Utils.console import console
 
 def lip_clip(model:torch.nn.Module, clip:float):
 
-    with torch.no_grad():
-        i = 1
-        for n, p in model.named_parameters():
-            if ('weight' in n) & ('last_lay' not in n):
-                if 'cnn_layers' in n:
-                    conv_filter = p.data.detach().clone()
-                    out_ch, in_ch, h, w = conv_filter.shape
-                    
-                    transpose1 = torch.transpose(conv_filter, 1, 2)
-                    matrix1 = transpose1.reshape(out_ch*h, in_ch*w)
-                    
-                    transpose2 = torch.transpose(conv_filter, 1, 3)
-                    matrix2 = transpose2.reshape(out_ch*w, in_ch*h)
+    sigma = 0.0
+    for n, p in model.named_parameters():
+        if ('weight' in n) & ('last_lay' not in n):
+            if 'cnn_layers' in n:
+                conv_filter = p.data.detach().clone()
+                out_ch, in_ch, h, w = conv_filter.shape
+                
+                transpose1 = torch.transpose(conv_filter, 1, 2)
+                matrix1 = transpose1.reshape(out_ch*h, in_ch*w)
+                
+                transpose2 = torch.transpose(conv_filter, 1, 3)
+                matrix2 = transpose2.reshape(out_ch*w, in_ch*h)
 
-                    matrix3 = conv_filter.view(out_ch, in_ch*h*w)
+                matrix3 = conv_filter.view(out_ch, in_ch*h*w)
 
-                    transpose4 = torch.transpose(conv_filter, 0, 1)
-                    matrix4 = transpose4.reshape(in_ch, out_ch*h*w)
+                transpose4 = torch.transpose(conv_filter, 0, 1)
+                matrix4 = transpose4.reshape(in_ch, out_ch*h*w)
 
-                    norm_1 = torch.linalg.matrix_norm(matrix1, ord=2).item()
-                    norm_2 = torch.linalg.matrix_norm(matrix2, ord=2).item()
-                    norm_3 = torch.linalg.matrix_norm(matrix3, ord=2).item()
-                    norm_4 = torch.linalg.matrix_norm(matrix4, ord=2).item()
+                norm_1 = torch.linalg.matrix_norm(matrix1, ord=2).item()
+                norm_2 = torch.linalg.matrix_norm(matrix2, ord=2).item()
+                norm_3 = torch.linalg.matrix_norm(matrix3, ord=2).item()
+                norm_4 = torch.linalg.matrix_norm(matrix4, ord=2).item()
 
-                    norm = h * min([norm_1, norm_2, norm_3, norm_4])
-                else:
-                    norm = torch.linalg.matrix_norm(p.data, ord=2).item()
-                w = min(1, clip / norm)
-                p.data = p.data * w
+                norm = h * min([norm_1, norm_2, norm_3, norm_4])
+            else:
+                norm = torch.linalg.matrix_norm(p.data, ord=2).item()
+            sigma = sigma + norm
+            w = min(1, clip / norm)
+            p.data = p.data * w
 
-    return model
+    return model, sigma
 
 def clip_weight(model:torch.nn.Module, clip:float):
     console.log(f"Is there NaN in weight: {torch.isnan(model.last_lay.weight.data.clone()).sum().item()}")

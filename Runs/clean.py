@@ -52,11 +52,12 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
                 data, target = d
                 data = data.to(device)
                 target = target.to(device)
-                # console.log(target)
+                model, sigma = lip_clip(model=model, clip=args.clipw)
                 pred = model(data)
                 loss = objective(pred, target)
                 pred = pred_fn(pred)
                 metrics.update(pred, target)
+                loss = loss + args.decay*sigma
                 loss.backward()
                 optimizer.step()
                 tr_loss += loss.item()*pred.size(dim=0)
