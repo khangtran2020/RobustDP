@@ -36,6 +36,7 @@ def lip_clip(model:torch.nn.Module, clip:float):
                 norm = h * min([norm_1, norm_2, norm_3, norm_4])
             else:
                 norm = torch.linalg.matrix_norm(p.data, ord=2).item()
+            console.log(f"{n}: {norm.item()}")
             sigma = sigma + norm
             w = min(1, clip / norm)
             p.data = p.data * w
