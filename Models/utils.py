@@ -28,14 +28,14 @@ def lip_clip(model:torch.nn.Module, clip:float):
                 transpose4 = torch.transpose(conv_filter, 0, 1)
                 matrix4 = transpose4.reshape(in_ch, out_ch*h*w)
 
-                norm_1 = torch.linalg.matrix_norm(matrix1, ord=2).item()
-                norm_2 = torch.linalg.matrix_norm(matrix2, ord=2).item()
-                norm_3 = torch.linalg.matrix_norm(matrix3, ord=2).item()
-                norm_4 = torch.linalg.matrix_norm(matrix4, ord=2).item()
+                norm_1 = torch.linalg.matrix_norm(matrix1, ord=2)
+                norm_2 = torch.linalg.matrix_norm(matrix2, ord=2)
+                norm_3 = torch.linalg.matrix_norm(matrix3, ord=2)
+                norm_4 = torch.linalg.matrix_norm(matrix4, ord=2)
 
-                norm = h * min([norm_1, norm_2, norm_3, norm_4])
+                norm = h * torch.min(norm_1, torch.min(norm_2, torch.min(norm_3, norm_4)))
             else:
-                norm = torch.linalg.matrix_norm(p.data, ord=2).item()
+                norm = torch.linalg.matrix_norm(p.data, ord=2)
             console.log(f"{n}: {norm.item()}")
             sigma = sigma + norm
             w = min(1, clip / norm)
