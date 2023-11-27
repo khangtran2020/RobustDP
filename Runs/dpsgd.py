@@ -113,14 +113,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
             else:
                 model, sigma = lip_clip(model=model, clip=args.clipw)
-                sigma = args.decay*sigma
-                sigma.backward(retain_graph=True)
-
-                grad_before = dict()
-                for tensor_name, tensor in model.named_parameters():
-                    new_grad = tensor.grad.clone()
-                    grad_before[tensor_name] = new_grad.detach()
-
 
                 pred = model(data)
                 loss = objective(pred, target)
@@ -141,7 +133,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 for tensor_name, tensor in model.named_parameters():
                     if tensor.grad is not None:
                         saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
-                        tensor.grad = saved_var[tensor_name] / num_data + grad_before[tensor_name]
+                        tensor.grad = saved_var[tensor_name] / num_data
 
                 optimizer.step()
                 pred = pred_fn(pred).detach()
