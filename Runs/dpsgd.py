@@ -215,7 +215,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 metrics.reset()
                 torch.save(model.state_dict(), args.model_path + model_name)
 
-            scheduler.step(metrics=va_loss)
+            # scheduler.step(metrics=va_loss)
 
             results = {
                 "Target epoch": epoch+1,

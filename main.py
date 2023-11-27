@@ -36,9 +36,7 @@ def run(args, date, device):
                 out_put = model(image)
                 console.log(f"Output dimension: {out_put.size()}, with value: {out_put}")
                 console.log(f'[bold][green]Done testing comparable of considered mode: :white_check_mark:')
-        # model = lip_clip(model=model, clip=args.clipw)
-        # model = clip_weight(model=model, clip=args.clipw)
-        # checked = check_clipped(model=model, clip=args.clipw)
+
     
     # train the model
     if args.gen_mode == 'clean':
