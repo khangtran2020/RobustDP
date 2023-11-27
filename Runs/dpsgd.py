@@ -110,7 +110,6 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     metrics.update(pred, mini_targ)
                     tr_loss += loss.detach().mean().item()*num_data_mini
                     ntr += num_data_mini
-
             else:
                 model, sigma = lip_clip(model=model, clip=args.clipw)
 
