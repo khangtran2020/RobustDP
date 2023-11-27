@@ -71,8 +71,10 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
             va_loss = 0
             nva = 0
             model.eval()
+            
             # validation
             with torch.no_grad():
+                model, sigma = lip_clip(model=model, clip=args.clipw)
                 for bi, d in enumerate(va_loader):
                     data, target = d
                     data = data.to(device)
@@ -134,6 +136,9 @@ def evalt(args, te_loader:torch.utils.data.DataLoader, model:torch.nn.Module, de
         # validation
         model.eval()
         with torch.no_grad():
+            
+            model, sigma = lip_clip(model=model, clip=args.clipw)
+
             for bi, d in enumerate(te_loader):
                 data, target = d
                 data = data.to(device)

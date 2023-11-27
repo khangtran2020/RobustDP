@@ -67,21 +67,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             if epoch == args.epochs - 1:
                 
                 with torch.no_grad():
-                    for name, module in model.named_children():
-                        if 'last_lay' in name: continue
-                        if isinstance(module, torch.nn.Linear):
-                            setattr(model, name, remove_spectral_norm(module))
-                        elif isinstance(module, torch.nn.Conv2d):
-                            setattr(model, name, remove_spectral_norm_conv(module))
-                        elif isinstance(module, torch.nn.ModuleList):
-                            for sname, smodule in module.named_children():
-                                if isinstance(smodule, torch.nn.Linear):
-                                    setattr(module, sname, remove_spectral_norm(smodule))
-                                elif isinstance(smodule, torch.nn.Conv2d):
-                                    setattr(module, sname, remove_spectral_norm_conv(smodule))
-                            setattr(model, name, module)
-                    
-                    model = lip_clip(model=model, clip=args.clipw)
+                    model, sigma = lip_clip(model=model, clip=args.clipw)
                     torch.save(model.state_dict(), args.model_path + model_name)
                 model.train()
                 num_data_mini = int(num_data / args.num_mo)
@@ -126,6 +112,15 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                     ntr += num_data_mini
 
             else:
+                model, sigma = lip_clip(model=model, clip=args.clipw)
+                sigma = args.decay*sigma
+                sigma.backward(retain_graph=True)
+
+                grad_before = dict()
+                for tensor_name, tensor in model.named_parameters():
+                    new_grad = tensor.grad.clone()
+                    grad_before[tensor_name] = new_grad.detach()
+
 
                 pred = model(data)
                 loss = objective(pred, target)
@@ -146,7 +141,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 for tensor_name, tensor in model.named_parameters():
                     if tensor.grad is not None:
                         saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
-                        tensor.grad = saved_var[tensor_name] / num_data
+                        tensor.grad = saved_var[tensor_name] / num_data + grad_before[tensor_name]
 
                 optimizer.step()
                 pred = pred_fn(pred).detach()
