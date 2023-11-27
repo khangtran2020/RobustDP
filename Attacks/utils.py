@@ -303,6 +303,8 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
                 data_denorm = denorm(data, device=device)
             elif args.data == 'cifar10':
                 data_denorm = denorm(data, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
+            elif args.data == 'utk':
+                data_denorm = data 
 
             adv_data = pgd_attack_dp(image=data_denorm, label=target, steps=args.pgd_steps, model_list=model_list, rad=radius, alpha=2/255, device=device)
             if args.data == 'mnist':
@@ -346,6 +348,14 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
                     adv_img = adv_data[idx][:num_plot].permute(0, 2, 3, 1)
                     adv_scr = adv_scores[idx][:num_plot]
                     adv_prd = final_pred[idx][:num_plot]
+                elif args.data == 'utk':
+                    org_img = data[:num_plot]
+                    org_scr = org_scores[:num_plot]
+                    org_prd = init_pred[:num_plot]
+
+                    adv_img = adv_data[:num_plot]
+                    adv_scr = adv_scores[:num_plot]
+                    adv_prd = final_pred[:num_plot]
                 labels = target[idx][:num_plot]
                 rads = radius[idx][:num_plot]
 
