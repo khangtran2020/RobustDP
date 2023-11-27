@@ -14,7 +14,7 @@ def lip_clip(model:torch.nn.Module, clip:float):
     for n, p in model.named_parameters():
         if ('weight' in n) & ('last_lay' not in n):
             if 'cnn_layers' in n:
-                conv_filter = p.data.detach().clone()
+                conv_filter = p
                 out_ch, in_ch, h, w = conv_filter.shape
                 
                 transpose1 = torch.transpose(conv_filter, 1, 2)
