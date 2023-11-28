@@ -38,6 +38,9 @@ class CustomAdamOptimizer:
         return params
 
     def zero_grad(self):
-        for moment1, moment2 in zip(self.moment1, self.moment2):
-            moment1.zero_()
-            moment2.zero_()
+        for key in self.moment1.keys():
+            self.moment1[key].zero_()
+            self.moment2[key].zero_()
+        # for moment1, moment2 in zip(self.moment1, self.moment2):
+        #     moment1.zero_()
+        #     moment2.zero_()
