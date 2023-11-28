@@ -19,7 +19,8 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     for group in optimizer.param_groups:
         console.log("Group Parameters:")
         for param_name, param_value in group.items():
-            console.log(f"{param_name}: {param_value.norm(p=2)}")
+            for param in param_value:
+                console.log(f"Params has norm: {param.norm(p=2)}")
 
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss(reduction='none').to(device)
