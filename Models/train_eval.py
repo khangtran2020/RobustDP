@@ -42,7 +42,6 @@ def tr_dpsgd(loader:DataLoader, model:Module, obj:Module, opt:Optimizer,
     batch = next(iter(loader))    
     
     model.zero_grad()
-    opt.zero_grad()
     if get == False:
         tr_loss, n = forward_dpsgd(model=model, batch=batch, device=device, metric=metric, 
                                 obj=obj, opt=opt, pred_fn=pred_fn, clip=clip, ns=ns)

@@ -48,10 +48,13 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
         tk_tr = progress.add_task("[red]Training...", total=args.epochs)
         tk_ev = progress.add_task("[cyan]Evaluating...", total=len(va_loader))
 
+        num_step = len(tr_loader)
         # progress.reset(task_id=task1)
         for epoch in range(args.epochs):
             
             if epoch < args.epochs - 1:
+                if epoch % num_step == 0:
+                    optimizer.zero_grad()
                 tr_loss, tr_perf = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.clip, ns=args.ns, device=device)
                 va_loss, va_perf = eval_fn(loader=va_loader, model=model, obj=objective, metric=metrics, clipw=None, pred_fn=pred_fn, device=device)
                 torch.save(model.state_dict(), args.model_path + model_name)
