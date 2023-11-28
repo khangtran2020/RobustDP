@@ -50,7 +50,7 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
 
         for tensor_name, tensor in model.named_parameters():
             # if tensor.grad is not None:
-            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip ).to(device))
+            saved_var[tensor_name].add_(torch.FloatTensor(saved_var[tensor_name].shape).normal_(0, ns * clip ).to(device))
             tensor.grad = saved_var[tensor_name] / num_pt
             console.log(f"For {tensor_name} grad: {tensor.grad.norm(p=2)}")    
 
