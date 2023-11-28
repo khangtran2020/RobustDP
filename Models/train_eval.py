@@ -76,11 +76,10 @@ def eval_fn(loader:DataLoader, model:Module, obj:Module, metric:Metric, clipw:fl
     model.eval()
     with torch.no_grad():
         for bi, batch in enumerate(loader):
-            feat, target, _ = batch
+            feat, target = batch
             feat = feat.to(device)
             target = target.to(device)
             score = model(feat)
-            score = torch.squeeze(score, dim=-1)
             loss = obj(score, target).mean()
             avg_loss += loss.item()*feat.size(dim=0)
             num_pt += feat.size(dim=0)

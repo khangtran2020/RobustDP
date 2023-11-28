@@ -11,11 +11,10 @@ Device = torch.device
 def forward_clean(model:Module, batch:tuple, device:Device, metric:Metric, opt: Optimizer, 
                   obj:Module, pred_fn:Module):
     
-    feat, target, _ = batch
+    feat, target = batch
     feat = feat.to(device, dtype=torch.float)
     target = target.to(device, dtype=torch.float)
     score = model(feat)
-    score = torch.squeeze(score)
     loss = obj(score, target)
     loss.backward()
     opt.step()
