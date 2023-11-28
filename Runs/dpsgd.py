@@ -4,6 +4,7 @@ from copy import deepcopy
 from rich.progress import Progress
 from typing import Dict
 from Models.utils import init_model
+from Models.modules.adam import CustomAdamOptimizer
 from Models.train_eval import tr_dpsgd, eval_fn, eval_multi_fn
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
@@ -12,9 +13,10 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=25, threshold=0.0001, 
-                                                           threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
+    param_dct = {}
+    for n, p in model.named_parameters():
+        param_dct[n] = p.data.clone()
+    optimizer = CustomAdamOptimizer(params=param_dct, lr=args.lr)
 
 
     if args.num_class > 1:

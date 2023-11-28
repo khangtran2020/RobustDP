@@ -46,22 +46,24 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
                 if tensor.grad is not None:
                     new_grad = tensor.grad.clone()
                     saved_var[tensor_name].add_(new_grad)
-            model.zero_grad()
+            opt.zero_grad()
 
         for tensor_name, tensor in model.named_parameters():
             # if tensor.grad is not None:
             saved_var[tensor_name].add_(torch.FloatTensor(saved_var[tensor_name].shape).normal_(0, ns * clip ).to(device))
             tensor.grad = saved_var[tensor_name] / num_pt
-            console.log(f"For {tensor_name} grad: {tensor.grad.norm(p=2)}")    
-
-        if l2 is not None:
-            l2.backward()
-
-        opt.step()
+        
+        param_dct = {}
+        for n, p in model.named_parameters():
+            param_dct[n] = p
+        
+        new_param = opt.step(params=param_dct)
         for tensor_name, tensor in model.named_parameters():
-            console.log(f"For {tensor_name} after: {tensor.norm(p=2)}, with grad {tensor.grad.norm(p=2)}")
+            tensor.data = new_param[tensor_name].clone()
+
         pred = pred_fn(score.detach())
         metric.update(pred, target.int())
+        model.zero_grad()
         return loss.mean().item(), feat.size(dim=0)
     else:
         last_lay = []
@@ -83,13 +85,19 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
             model.zero_grad()
 
         for name, tensor in model.named_parameters():
-            if tensor.grad is not None:
-                if 'last_lay' not in tensor_name:
-                    saved_var[name].add_(
-                        torch.FloatTensor(tensor.grad.shape).normal_(0, clip * ns).to(device))
-                    tensor.grad = saved_var[name] / num_pt
-                else:
-                    tensor.grad = torch.zeros_like(tensor).to(device)
+            if 'last_lay' not in tensor_name:
+                saved_var[name].add_(
+                    torch.FloatTensor(tensor.grad.shape).normal_(0, clip * ns).to(device))
+                tensor.grad = saved_var[name] / num_pt
+            else:
+                tensor.grad = torch.zeros_like(tensor).to(device)
 
-        opt.step()
+        param_dct = {}
+        for n, p in model.named_parameters():
+            param_dct[n] = p
+        
+        new_param = opt.step(params=param_dct)
+        for tensor_name, tensor in model.named_parameters():
+            tensor.data = new_param[tensor_name].clone()
+        model.zero_grad()
         return last_lay, num_pt
