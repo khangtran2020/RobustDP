@@ -26,11 +26,10 @@ def forward_clean(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
 def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: Optimizer, 
                   obj:Module, pred_fn:Module, clip:float, ns:float, l2:torch.Tensor=None, get:bool=False):
     
-    feat, target, _ = batch
+    feat, target = batch
     feat = feat.to(device, dtype=torch.float)
-    target = target.to(device, dtype=torch.float)
+    target = target.to(device, dtype=torch.long)
     score = model(feat)
-    score = torch.squeeze(score)
     loss = obj(score, target)
     num_pt = feat.size(dim=0)
 
