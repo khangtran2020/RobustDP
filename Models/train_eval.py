@@ -34,7 +34,7 @@ def tr_clean(loader:DataLoader, model:Module, obj:Module, opt:Optimizer,
     return tr_loss, tr_perf.item()
 
 def tr_dpsgd(loader:DataLoader, model:Module, obj:Module, opt:Optimizer, 
-             metric:Metric, pred_fn:Module, device:torch.device, clip:float, ns:float):
+             metric:Metric, pred_fn:Module, device:torch.device, clip:float, ns:float, get:bool=False):
     
     model.to(device)
     model.train()
@@ -43,32 +43,21 @@ def tr_dpsgd(loader:DataLoader, model:Module, obj:Module, opt:Optimizer,
     
     model.zero_grad()
     opt.zero_grad()
-    tr_loss, n = forward_dpsgd(model=model, batch=batch, device=device, metric=metric, 
-                            obj=obj, opt=opt, pred_fn=pred_fn, clip=clip, ns=ns)
+    if get == False:
+        tr_loss, n = forward_dpsgd(model=model, batch=batch, device=device, metric=metric, 
+                                obj=obj, opt=opt, pred_fn=pred_fn, clip=clip, ns=ns)
 
-    tr_perf = metric.compute()
-    metric.reset()
+        tr_perf = metric.compute()
+        metric.reset()
 
-    return tr_loss, tr_perf.item()
+        return tr_loss, tr_perf.item()
+    else:
 
-# def tr_fairdp(loader:DataLoader, model:Module, obj:Module, opt:Optimizer, 
-#               device:Device, clip:float, ns:float, pred_fn:Module, get:bool=False):
+        las_lay, n = forward_dpsgd(model=model, batch=batch, device=device, metric=metric, 
+                                obj=obj, opt=opt, pred_fn=pred_fn, clip=clip, ns=ns, get=get)
+        return las_lay, n
+        
 
-#     model.to(device)
-#     model.train()
-
-#     batch = next(iter(loader))
-    
-#     if get == False:
-#         tr_loss, num_pt = forward_fairdp(batch=batch, model=model, device=device, opt=opt, 
-#                                          obj=obj, clip=clip, ns=ns, pred_fn=pred_fn, get=get)
-#         return tr_loss, num_pt
-#     else:
-#         last_lay, num_pt = forward_fairdp(batch=batch, model=model, device=device, opt=opt, 
-#                                           obj=obj, clip=clip, ns=ns, pred_fn=pred_fn, get=get)
-#         return last_lay, num_pt
-
-# eval
 def eval_fn(loader:DataLoader, model:Module, obj:Module, metric:Metric, clipw:float, device:torch.device, pred_fn:Module):
     model.to(device)
     avg_loss = 0
@@ -106,13 +95,13 @@ def eval_multi_fn(loader:DataLoader, models:Sequence[Module], obj:Module, metric
         for bi, batch in enumerate(loader):
             feat, target, _ = batch
             feat = feat.to(device)
-            target = target.to(device)
+            target = target.to(device, dtype=torch.long)
             for j, model in enumerate(models):
                 if j == 0:
                     score = model(feat)
                 else:
                     score = score + model(feat)
-            score = torch.squeeze(score, dim=-1)/len(models)
+            score = score/len(models)
             loss = obj(score, target).mean()
             avg_loss += loss.item() * feat.size(dim=0)
             num_data += feat.size(dim=0)

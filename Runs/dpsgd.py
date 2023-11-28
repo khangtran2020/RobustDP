@@ -3,9 +3,8 @@ import torchmetrics
 from copy import deepcopy
 from rich.progress import Progress
 from typing import Dict
-from Models.modules.spectral_norm import remove_spectral_norm
-from Models.modules.spectral_norm_conv import remove_spectral_norm_conv
-from Models.utils import lip_clip, clip_weight, init_model
+from Models.utils import init_model
+from Models.train_eval import tr_dpsgd, eval_fn, eval_multi_fn
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
@@ -48,158 +47,47 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
         # progress.reset(task_id=task1)
         for epoch in range(args.epochs):
-
-            tr_loss = 0
-            ntr = 0
             
-            # train
-            model.train()
-
-            # for bi, d in enumerate(tr_loader):
-            batch = next(iter(tr_loader))
-            model.zero_grad()
-            optimizer.zero_grad()
-            data, target = batch
-            data = data.to(device)
-            target = target.to(device)
-            num_data = data.size(dim=0)
-            
-            if epoch == args.epochs - 1:
-                
+            if epoch < args.epochs - 1:
+                tr_loss, tr_perf = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.cgrad, ns=args.ns, device=device)
+                va_loss, va_perf = eval_fn(loader=va_loader, model=model, obj=objective, metric=metrics, clipw=None, pred_fn=pred_fn, device=device)
+                torch.save(model.state_dict(), args.model_path + model_name)
+            else:
+                grad, bz = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.cgrad, ns=args.ns, device=device, get=True)
+                state_dict = model.state_dict()
                 with torch.no_grad():
-                    model, sigma = lip_clip(model=model, clip=args.clipw)
-                    torch.save(model.state_dict(), args.model_path + model_name)
-                model.train()
-                num_data_mini = int(num_data / args.num_mo)
-                for mit in range(args.num_mo):
-                    model.load_state_dict(torch.load(args.model_path + model_name))
-                    model.zero_grad()
-                    optimizer.zero_grad()
 
-                    mini_data = data[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
-                    mini_targ = target[mit*num_data_mini:(mit + 1)*num_data_mini].clone()
+                    model_list = []
+                    mini_batch = int(bz / args.n_mo)
 
-                    pred = model(mini_data)
-                    loss = objective(pred, mini_targ)
-                    saved_var = dict()
-                    for tensor_name, tensor in model.named_parameters():
-                        saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
+                    for i in range(args.n_mo):
+                        model_temp = init_model(args=args)
+                        model_temp.load_state_dict(state_dict=state_dict)
 
-                    for li, los in enumerate(loss):
-                        los.backward(retain_graph=True)
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
-                        for tensor_name, tensor in model.named_parameters():
+                        saved_var = {}
+                        for tensor_name, tensor in model_temp.named_parameters():
+                            if 'last_lay' in tensor_name: 
+                                saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
+
+                        for pos, j in enumerate(grad[i * mini_batch:(i + 1) * mini_batch]):
+                            for tensor_name, tensor in model_temp.named_parameters():
+                                if tensor.grad is not None:
+                                    if 'last_lay' in tensor_name:
+                                        saved_var[tensor_name].add_(j)
+
+                        for tensor_name, tensor in model_temp.named_parameters():
                             if tensor.grad is not None:
-                                new_grad = tensor.grad
-                                saved_var[tensor_name].add_(new_grad)
-                        model.zero_grad()
+                                if 'last_lay' in tensor_name:
+                                    saved_var[tensor_name].add_(
+                                        torch.FloatTensor(tensor.grad.shape).normal_(0, args.clip*args.ns).to(device))
+                                    tensor.grad = saved_var[tensor_name]
+                                    tensor.data = tensor.data - args.lr * tensor.grad
+                        model_list.append(model_temp)
 
-                    for tensor_name, tensor in model.named_parameters():
-                        if tensor.grad is not None:
-                            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
-                            tensor.grad = saved_var[tensor_name] / num_data_mini
-                    optimizer.step()
-
-                    
-                    torch.save(model.state_dict(), args.model_path + f"model_{mit+1}_{model_name}")
-                    new_model = init_model(args=args)
-                    new_model.load_state_dict(model.state_dict())
-                    model_list.append(new_model)
-
-                    pred = pred_fn(pred).detach()
-                    metrics.update(pred, mini_targ)
-                    tr_loss += loss.detach().mean().item()*num_data_mini
-                    ntr += num_data_mini
-            else:
-                model, sigma = lip_clip(model=model, clip=args.clipw)
-
-                pred = model(data)
-                loss = objective(pred, target)
-
-                saved_var = dict()
-                for tensor_name, tensor in model.named_parameters():
-                    saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
-
-                for li, los in enumerate(loss):
-                    los.backward(retain_graph=True)
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
-                    for tensor_name, tensor in model.named_parameters():
-                        if tensor.grad is not None:
-                            new_grad = tensor.grad
-                            saved_var[tensor_name].add_(new_grad)
-                    model.zero_grad()
-
-                for tensor_name, tensor in model.named_parameters():
-                    if tensor.grad is not None:
-                        saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, args.ns * args.clip).to(device))
-                        tensor.grad = saved_var[tensor_name] / num_data
-
-                optimizer.step()
-                pred = pred_fn(pred).detach()
-                metrics.update(pred, target)
-                model = clip_weight(model=model, clip=args.clipw)
-                tr_loss += loss.detach().mean().item()*num_data
-                ntr += num_data
-                torch.save(model.state_dict(), args.model_path + model_name)
-
-            tr_loss = tr_loss / ntr 
-            tr_perf = metrics.compute().item()
-            metrics.reset()   
-
-            va_loss = 0
-            nva = 0
-
-            # validation
-            if (epoch == args.epochs - 1):
-                console.log(f"# of model: {len(model_list)}")
-                for i, m in enumerate(model_list):
-                    m.eval()
-                    m.to(device)
-
-                with torch.no_grad():
-
-                    for bi, d in enumerate(va_loader):
-                        data, target = d
-                        data = data.to(device)
-                        target = target.to(device)
-
-                        preds = None
-                        for miv, m in enumerate(model_list):
-                            if miv == 0:
-                                preds = m(data)
-                            else:
-                                preds = preds + m(data)
-                        
-                        preds = preds / len(model_list)
-
-                        loss = objective(preds, target)
-                        preds = pred_fn(preds)
-                        metrics.update(preds, target)
-                        va_loss += loss.mean().item()*preds.size(dim=0)
-                        nva += preds.size(dim=0)
-                        progress.advance(tk_ev)
-                va_loss = va_loss / nva 
-                va_perf = metrics.compute().item()
-                metrics.reset()
-            else:
-                model.eval()
-                with torch.no_grad():
-                    for bi, d in enumerate(va_loader):
-                        data, target = d
-                        data = data.to(device)
-                        target = target.to(device)
-                        pred = model(data)
-                        loss = objective(pred, target)
-                        pred = pred_fn(pred)
-                        metrics.update(pred, target)
-                        va_loss += loss.mean().item()*pred.size(dim=0)
-                        nva += pred.size(dim=0)
-                        progress.advance(tk_ev)
-
-                va_loss = va_loss / nva 
-                va_perf = metrics.compute().item()
-                metrics.reset()
-                torch.save(model.state_dict(), args.model_path + model_name)
+                    tr_loss, tr_perf = eval_multi_fn(loader=tr_loader, models=model_list, obj=objective, metric=metrics, device=device, pred_fn=pred_fn)
+                    va_loss, va_perf = eval_multi_fn(loader=va_loader, models=model_list, obj=objective, metric=metrics, device=device, pred_fn=pred_fn)
+                    for i, m in enumerate(model_list):
+                        torch.save(m.state_dict(), args.model_path + f'model_{i}_{name}.pt')
 
             # scheduler.step(metrics=va_loss)
 
@@ -252,7 +140,7 @@ def evaltdp(args, te_loader:torch.utils.data.DataLoader, model_list:list, device
             for bi, d in enumerate(te_loader):
                 data, target = d
                 data = data.to(device)
-                target = target.to(device)
+                target = target.to(device, dtype=torch.long)
                 
                 for mi, m in enumerate(model_list):
                     if mi == 0:
