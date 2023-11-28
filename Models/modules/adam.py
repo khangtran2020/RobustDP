@@ -27,12 +27,12 @@ class CustomAdamOptimizer:
             if grad is None:
                 continue
 
-            self.moment1[key] = self.beta1 * self.moment1[i] + (1 - self.beta1) * grad
-            self.moment2[key] = self.beta2 * self.moment2[i] + (1 - self.beta2) * grad**2
+            self.moment1[key] = self.beta1 * self.moment1[key] + (1 - self.beta1) * grad
+            self.moment2[key] = self.beta2 * self.moment2[key] + (1 - self.beta2) * grad**2
 
             # Bias correction
-            moment1_hat = self.moment1[i] / (1 - self.beta1**self.t)
-            moment2_hat = self.moment2[i] / (1 - self.beta2**self.t)
+            moment1_hat = self.moment1[key] / (1 - self.beta1**self.t)
+            moment2_hat = self.moment2[key] / (1 - self.beta2**self.t)
 
             params[key].data -= self.lr * moment1_hat / (torch.sqrt(moment2_hat) + self.epsilon)
         return params
