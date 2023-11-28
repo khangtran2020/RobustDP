@@ -16,6 +16,11 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=25, threshold=0.0001, 
                                                            threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
 
+    for group in optimizer.param_groups:
+        console.log("Group Parameters:")
+        for param_name, param_value in group.items():
+            console.log(f"{param_name}: {param_value}")
+
     if args.num_class > 1:
         objective = torch.nn.CrossEntropyLoss(reduction='none').to(device)
         pred_fn = torch.nn.Softmax(dim=1).to(device)
