@@ -17,9 +17,9 @@ def forward_clean(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
     score = model(feat)
     loss = obj(score, target)
     loss.backward()
+    opt.step()
     for n, p in model.named_parameters():
         console.log(f"Param {n}: {p.grad.norm(p=2)}")
-    opt.step()
     pred = pred_fn(score.detach())
     metric.update(pred, target.int())
 
