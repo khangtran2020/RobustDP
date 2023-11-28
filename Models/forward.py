@@ -33,6 +33,8 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
     loss = obj(score, target)
     num_pt = feat.size(dim=0)
 
+    console.log(f"Updating with clip: {clip} and ns: {ns}")
+
     if get == False:
         saved_var = dict()
         for tensor_name, tensor in model.named_parameters():
