@@ -43,7 +43,6 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
             j.backward(retain_graph=True)
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
             for tensor_name, tensor in model.named_parameters():
-                console.log(f"Params {tensor_name}: {tensor.grad.norm(p=2)}")
                 if tensor.grad is not None:
                     new_grad = tensor.grad.clone()
                     saved_var[tensor_name].add_(new_grad)
