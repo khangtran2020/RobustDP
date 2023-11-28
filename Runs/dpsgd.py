@@ -49,11 +49,11 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
         for epoch in range(args.epochs):
             
             if epoch < args.epochs - 1:
-                tr_loss, tr_perf = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.cgrad, ns=args.ns, device=device)
+                tr_loss, tr_perf = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.clip, ns=args.ns, device=device)
                 va_loss, va_perf = eval_fn(loader=va_loader, model=model, obj=objective, metric=metrics, clipw=None, pred_fn=pred_fn, device=device)
                 torch.save(model.state_dict(), args.model_path + model_name)
             else:
-                grad, bz = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.cgrad, ns=args.ns, device=device, get=True)
+                grad, bz = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clip=args.clip, ns=args.ns, device=device, get=True)
                 state_dict = model.state_dict()
                 with torch.no_grad():
 
