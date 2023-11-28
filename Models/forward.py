@@ -38,7 +38,6 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
     if get == False:
         saved_var = dict()
         for tensor_name, tensor in model.named_parameters():
-            console.log(f"For {tensor_name} before: {tensor.norm(p=2)}")
             saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
         for pos, j in enumerate(loss):
