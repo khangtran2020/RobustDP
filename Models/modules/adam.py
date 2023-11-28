@@ -2,7 +2,7 @@ import torch
 from typing import Dict
 
 class CustomAdamOptimizer:
-    def __init__(self, params:Dict, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, params:Dict, device:torch.device, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
@@ -13,8 +13,8 @@ class CustomAdamOptimizer:
         self.moment2 = {}
 
         for key in params.keys():
-            self.moment1[key] = torch.zeros_like(params[key])
-            self.moment2[key] = torch.zeros_like(params[key])
+            self.moment1[key] = torch.zeros_like(params[key]).to(device)
+            self.moment2[key] = torch.zeros_like(params[key]).to(device)
 
     def step(self, params:Dict, closure=None):
         self.t += 1

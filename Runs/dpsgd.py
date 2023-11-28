@@ -16,7 +16,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
     param_dct = {}
     for n, p in model.named_parameters():
         param_dct[n] = p.data.clone()
-    optimizer = CustomAdamOptimizer(params=param_dct, lr=args.lr)
+    optimizer = CustomAdamOptimizer(params=param_dct, lr=args.lr, device=device)
 
 
     if args.num_class > 1:
