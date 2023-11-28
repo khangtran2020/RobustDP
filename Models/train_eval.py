@@ -93,7 +93,7 @@ def eval_multi_fn(loader:DataLoader, models:Sequence[Module], obj:Module, metric
     with torch.no_grad():
 
         for bi, batch in enumerate(loader):
-            feat, target, _ = batch
+            feat, target= batch
             feat = feat.to(device)
             target = target.to(device, dtype=torch.long)
             for j, model in enumerate(models):
