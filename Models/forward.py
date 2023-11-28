@@ -36,6 +36,7 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
     if get == False:
         saved_var = dict()
         for tensor_name, tensor in model.named_parameters():
+            console.log(f"For {tensor_name} before: {tensor.norm(p=2)}")
             saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
         for pos, j in enumerate(loss):
@@ -44,7 +45,6 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
             for tensor_name, tensor in model.named_parameters():
                 if tensor.grad is not None:
                     new_grad = tensor.grad.clone()
-                    console.log(f"Grad of {tensor_name}: {new_grad.norm(p=2)}")
                     saved_var[tensor_name].add_(new_grad)
             model.zero_grad()
 
@@ -57,6 +57,8 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
             l2.backward()
 
         opt.step()
+        for tensor_name, tensor in model.named_parameters():
+            console.log(f"For {tensor_name} after: {tensor.norm(p=2)}")
         pred = pred_fn(score.detach())
         metric.update(pred, target.int())
         return loss.mean().item(), feat.size(dim=0)
