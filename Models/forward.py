@@ -13,7 +13,7 @@ def forward_clean(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
     
     feat, target = batch
     feat = feat.to(device, dtype=torch.float)
-    target = target.long().to(device, dtype=torch.float)
+    target = target.to(device, dtype=torch.long)
     score = model(feat)
     loss = obj(score, target)
     loss.backward()

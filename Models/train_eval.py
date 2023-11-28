@@ -78,7 +78,7 @@ def eval_fn(loader:DataLoader, model:Module, obj:Module, metric:Metric, clipw:fl
         for bi, batch in enumerate(loader):
             feat, target = batch
             feat = feat.to(device)
-            target = target.long().to(device)
+            target = target.to(device, dtype=torch.long)
             score = model(feat)
             loss = obj(score, target).mean()
             avg_loss += loss.item()*feat.size(dim=0)
