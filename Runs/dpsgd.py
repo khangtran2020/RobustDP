@@ -58,9 +58,9 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 with torch.no_grad():
 
                     model_list = []
-                    mini_batch = int(bz / args.n_mo)
+                    mini_batch = int(bz / args.num_mo)
 
-                    for i in range(args.n_mo):
+                    for i in range(args.num_mo):
                         model_temp = init_model(args=args)
                         model_temp.load_state_dict(state_dict=state_dict)
 
