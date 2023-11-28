@@ -45,8 +45,9 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
             i = 0
             for parmas in model.parameters():
                 console.log(f"Params {i}: {parmas.grad.norm(p=2)}")
+                i += 1
             for tensor_name, tensor in model.named_parameters():
-                console.log(f"Params {tensor_name}: {tensor.grad}")
+                console.log(f"Params {tensor_name}: {tensor.grad.norm(p=2)}")
                 if tensor.grad is not None:
                     new_grad = tensor.grad.clone()
                     saved_var[tensor_name].add_(new_grad)
