@@ -3,30 +3,30 @@ import torchmetrics
 from rich.progress import Progress
 from typing import Dict
 from Models.modules.training_utils import EarlyStopping
-from Models.utils import lip_clip, clip_weight
+from Models.train_eval import tr_clean, eval_fn
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
 def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, 
+    optim = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, mode='min', factor=0.1, patience=10, threshold=0.0001, 
                                                            threshold_mode='rel',cooldown=0, min_lr=0, eps=1e-08)
 
     if args.num_class > 1:
-        objective = torch.nn.CrossEntropyLoss().to(device)
+        obj = torch.nn.CrossEntropyLoss().to(device)
         pred_fn = torch.nn.Softmax(dim=1).to(device)
-        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
+        metric = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
     else:
-        objective = torch.nn.BCEWithLogitsLoss().to(device)
+        obj = torch.nn.BCEWithLogitsLoss().to(device)
         pred_fn = torch.nn.Sigmoid().to(device)
-        metrics = torchmetrics.classification.BinaryAccuracy().to(device)
+        metric = torchmetrics.classification.BinaryAccuracy().to(device)
 
-    console.log(f"[green]Train / Optimizing model with optimizer[/green]: {optimizer}")
-    console.log(f"[green]Train / Objective of the training process[/green]: {objective}")
+    console.log(f"[green]Train / Optimizing model with optimizer[/green]: {optim}")
+    console.log(f"[green]Train / Objective of the training process[/green]: {obj}")
     console.log(f"[green]Train / Predictive activation[/green]: {pred_fn}")
-    console.log(f"[green]Train / Evaluating with metrics[/green]: {metrics}")
+    console.log(f"[green]Train / Evaluating with metrics[/green]: {metric}")
 
     model.to(device)
 
@@ -35,62 +35,12 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
     with Progress(console=console) as progress:
 
         tk_tr = progress.add_task("[red]Training...", total=args.epochs)
-        tk_up = progress.add_task("[green]Updating...", total=len(tr_loader))
-        tk_ev = progress.add_task("[cyan]Evaluating...", total=len(va_loader))
 
         # progress.reset(task_id=task1)
         for epoch in range(args.epochs):
 
-            tr_loss = 0
-            ntr = 0
-            num_step = len(tr_loader)
-            model.train()
-
-            # train
-            for bi, d in enumerate(tr_loader):
-                model.zero_grad()
-                data, target = d
-                data = data.to(device)
-                target = target.to(device)
-                model, sigma = lip_clip(model=model, clip=args.clipw)
-                pred = model(data)
-                loss = objective(pred, target)
-                pred = pred_fn(pred)
-                metrics.update(pred, target)
-                loss = loss + args.decay*sigma
-                loss.backward()
-                optimizer.step()
-                tr_loss += loss.item()*pred.size(dim=0)
-                ntr += pred.size(dim=0)
-                progress.advance(tk_up)
-
-            tr_loss = tr_loss / ntr 
-            tr_perf = metrics.compute().item()
-            metrics.reset()
-
-            va_loss = 0
-            nva = 0
-            model.eval()
-            
-            # validation
-            with torch.no_grad():
-                model, sigma = lip_clip(model=model, clip=args.clipw)
-                for bi, d in enumerate(va_loader):
-                    data, target = d
-                    data = data.to(device)
-                    target = target.to(device)
-                    pred = model(data)
-                    loss = objective(pred, target)
-                    pred = pred_fn(pred)
-                    metrics.update(pred, target)
-                    va_loss += loss.item()*pred.size(dim=0)
-                    nva += pred.size(dim=0)
-                    progress.advance(tk_ev)
-
-            va_loss = va_loss / nva 
-            va_perf = metrics.compute().item()
-            metrics.reset()
-
+            tr_loss, tr_perf = tr_clean(loader=tr_loader, model=model, obj=obj, opt=optim, metric=metric, clipw=args.clipw, pred_fn=pred_fn, device=device)
+            va_loss, va_perf = eval_fn(loader=va_loader, model=model, obj=obj, metric=metric, clipw=args.clipw, pred_fn=pred_fn, device=device)
             scheduler.step(metrics=va_loss)
 
             results = {
@@ -108,8 +58,6 @@ def train(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.dat
 
             progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}") 
             progress.advance(tk_tr)
-            progress.reset(tk_up)
-            progress.reset(tk_ev)
         console.log(f"Done Training target model: :white_check_mark:")
     model.load_state_dict(torch.load(args.model_path + model_name))
     return model, history
