@@ -269,7 +269,7 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
         crad = torch.Tensor([])
         bound = hoeffding_bound(nobs=args.num_mo, alpha=args.alpha, bonferroni_hyp_n=num_c)
         log_epoch = 0
-
+        console.log(f"Number of step in test loader: {len(te_loader)}")
         for i, batch in enumerate(te_loader):
 
             data, target = batch
