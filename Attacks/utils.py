@@ -229,7 +229,7 @@ def certified_metric(radius:torch.Tensor, correct:torch.Tensor, custom_rad:torch
     if custom_rad is not None:
         considered_rad = custom_rad
     else:
-        considered_rad = torch.linspace(start=0, end=rad_max, steps=10)
+        considered_rad = torch.linspace(start=0, end=rad_max, steps=5)
     
     cert_acc = []
     cert_acc_oncert = []
