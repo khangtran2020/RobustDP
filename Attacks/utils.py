@@ -260,6 +260,8 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
         for m in model_list:
             m.to(device)
             m.eval()
+            for n, p in m.named_parameters():
+                p.requires_grad = False
 
         num_c = args.num_class
         pred_fn = torch.nn.Softmax(dim=1) if num_c > 1 else torch.nn.Sigmoid()
