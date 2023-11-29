@@ -34,7 +34,7 @@ def tr_clean(loader:DataLoader, model:Module, obj:Module, opt:Optimizer,
     return tr_loss, tr_perf.item()
 
 def tr_dpsgd(loader:DataLoader, model:Module, obj:Module, opt:Optimizer, 
-             metric:Metric, pred_fn:Module, device:torch.device, clip:float, ns:float, get:bool=False):
+             metric:Metric, pred_fn:Module, device:torch.device, clipw:float, clip:float, ns:float, get:bool=False):
     
     model.to(device)
     model.train()
@@ -44,7 +44,7 @@ def tr_dpsgd(loader:DataLoader, model:Module, obj:Module, opt:Optimizer,
     model.zero_grad()
     if get == False:
         tr_loss, n = forward_dpsgd(model=model, batch=batch, device=device, metric=metric, 
-                                obj=obj, opt=opt, pred_fn=pred_fn, clip=clip, ns=ns)
+                                   obj=obj, opt=opt, pred_fn=pred_fn, clipw=clipw, clip=clip, ns=ns)
 
         tr_perf = metric.compute()
         metric.reset()
@@ -53,7 +53,7 @@ def tr_dpsgd(loader:DataLoader, model:Module, obj:Module, opt:Optimizer,
     else:
 
         las_lay, n = forward_dpsgd(model=model, batch=batch, device=device, metric=metric, 
-                                obj=obj, opt=opt, pred_fn=pred_fn, clip=clip, ns=ns, get=get)
+                                   obj=obj, opt=opt, pred_fn=pred_fn, clipw=clipw, clip=clip, ns=ns, get=get)
         return las_lay, n
         
 

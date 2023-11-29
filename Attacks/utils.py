@@ -10,11 +10,14 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 from typing import Dict
 from PIL import Image
+from torch.nn import Module
+from typing import Sequence
+from torch.utils.data import DataLoader
 from Attacks.attacks import fgsm_attack, pgd_attack, pgd_attack_dp
 from Utils.console import console
 from Utils.utils import get_index_by_value
 
-def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
+def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loader:DataLoader, num_plot:int, history:Dict):
 
     with console.status("Evaluating robustness") as status:
 
@@ -120,22 +123,34 @@ def robust_eval_clean(args, model:torch.nn.Module, device:torch.device, te_loade
 
         final_acc = metrics.compute().item()
         correct = (pred.int() == gtar.int()).int()
-        rad_ls, cert_acc, img_arr = certified_accuracy(radius=crad, correct=correct)
+        rad_ls, cert_acc, cert_acc_oncert, img_crt, img_acccrt = certified_metric(radius=crad, correct=correct)
 
         images = wandb.Image(
-            img_arr, caption="Certified Accuracy"
+            img_crt, caption="Certified Accuracy"
         )
-            
         wandb.log({"Certified Accuracy": images})
+        images = wandb.Image(
+            img_acccrt, caption="Certified Accuracy"
+        )
+        wandb.log({"Accuracy on Certified Prediction": images})
 
+        emp_imgarr, emp_acc = empirical_metric_clean(loader=te_loader, dataset=args.data, model=model, pgd_step=args.pgd_steps, 
+                                                     rads=rad_ls, num_class=args.num_class, device=device)
+        images = wandb.Image(
+            emp_imgarr, caption="Empirical Accuracy under Attacks"
+        )
+        wandb.log({"Empirical Accuracy under Attacks": images})
+        
         history['correctness_of_bound'] = final_acc
         history['certified_radius'] = rad_ls
         history['certified_acc'] = cert_acc
+        history['acc_oncert'] = cert_acc_oncert
+        history['empirical_acc'] = emp_acc
         console.log(f"Corretness of bound performance: {final_acc}")
-        console.log(f"Certified Radius: {rad_ls}")
-        console.log(f"Certified Accuracy: {cert_acc}")
         wandb.summary[f"Corretness of bound performance"] = f"{final_acc}"
         wandb.summary[f"Certified Accuracy"] = f"{cert_acc}"
+        wandb.summary[f"Accuracy on Certified"] = f"{cert_acc_oncert}"
+        wandb.summary[f"Empirical Accuracy under attacks"] = f"{emp_acc}"
         wandb.summary[f"Certified Radius"] = f"{rad_ls}"
         console.log(f'[bold][green]Done Evaluating robustness: :white_check_mark:')
 
@@ -205,9 +220,8 @@ def draw_score(score:np.ndarray, num_lab:int):
     arr = np.array(img)
     return arr
 
-def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:torch.Tensor=None):
+def certified_metric(radius:torch.Tensor, correct:torch.Tensor, custom_rad:torch.Tensor=None):
     
-    rad_min = radius.min().item()
     rad_max = radius.max().item()
 
     print(correct.unique(return_counts=True))
@@ -218,11 +232,14 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
         considered_rad = torch.linspace(start=0, end=rad_max, steps=10)
     
     cert_acc = []
+    cert_acc_oncert = []
 
     for rad in considered_rad:
         rad_mask = (radius > rad).int()
         corr_mask = torch.logical_and(rad_mask, correct).float()
         cert_acc.append(corr_mask.mean().item())
+        indx = get_index_by_value(a=rad_mask, val=1)
+        cert_acc_oncert.append(corr_mask[indx].mean().item())
     
     radius_ls = considered_rad.tolist()
     name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
@@ -238,10 +255,25 @@ def certified_accuracy(radius:torch.Tensor, correct:torch.Tensor, custom_rad:tor
     plt.xlabel('Certified Radius')
     plt.savefig(path, dpi=200, bbox_inches='tight')
 
-    img = Image.open(path)
-    arr = np.array(img)
+    img_crtacc = Image.open(path)
+    arr_crtacc = np.array(img_crtacc)
 
-    return radius_ls, cert_acc, arr
+    name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+    path = f'results/dict/{name}.jpg'
+    while (os.path.exists(path)):
+        name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+        path = f'results/dict/{name}.jpg'
+
+    plt.figure(figsize=(5,5))
+    plt.plot(range(len(radius_ls)), cert_acc_oncert)
+    plt.xticks(np.arange(len(radius_ls)), [f'{a:.2f}' for a in radius_ls])
+    plt.ylabel('Accuracy of Certified Prediction')
+    plt.xlabel('Certified Radius')
+    plt.savefig(path, dpi=200, bbox_inches='tight')
+    img_crtacconcrt = Image.open(path)
+    arr_crtacconcrt = np.array(img_crtacconcrt)
+
+    return radius_ls, cert_acc, cert_acc_oncert, arr_crtacc, arr_crtacconcrt
 
 def hoeffding_bound(nobs, alpha, bonferroni_hyp_n=1):
     return math.sqrt(math.log(bonferroni_hyp_n / alpha) / (2 * nobs))
@@ -249,7 +281,6 @@ def hoeffding_bound(nobs, alpha, bonferroni_hyp_n=1):
 def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.utils.data.DataLoader, num_plot:int, history:Dict):
 
     torch.cuda.empty_cache()
-
     with console.status("Evaluating robustness") as status:
         # Accuracy counter
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
@@ -374,21 +405,131 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
 
         final_acc = metrics.compute().item()
         correct = (pred.int() == gtar.int()).int()
-        rad_ls, cert_acc, img_arr = certified_accuracy(radius=crad, correct=correct)
+        rad_ls, cert_acc, cert_acc_oncert, img_crt, img_acccrt = certified_metric(radius=crad, correct=correct)
 
         images = wandb.Image(
-            img_arr, caption="Certified Accuracy"
+            img_crt, caption="Certified Accuracy"
         )
-            
         wandb.log({"Certified Accuracy": images})
+        images = wandb.Image(
+            img_acccrt, caption="Certified Accuracy"
+        )
+        wandb.log({"Accuracy on Certified Prediction": images})
 
+        emp_imgarr, emp_acc = empirical_metric_dp(loader=te_loader, dataset=args.data, models=model_list, pgd_step=args.pgd_steps, 
+                                                  rads=rad_ls, num_class=args.num_class, device=device)
+        images = wandb.Image(
+            emp_imgarr, caption="Empirical Accuracy under Attacks"
+        )
+        wandb.log({"Empirical Accuracy under Attacks": images})
+        
         history['correctness_of_bound'] = final_acc
         history['certified_radius'] = rad_ls
         history['certified_acc'] = cert_acc
+        history['acc_oncert'] = cert_acc_oncert
+        history['empirical_acc'] = emp_acc
         console.log(f"Corretness of bound performance: {final_acc}")
-        console.log(f"Certified Radius: {rad_ls}")
-        console.log(f"Certified Accuracy: {cert_acc}")
         wandb.summary[f"Corretness of bound performance"] = f"{final_acc}"
         wandb.summary[f"Certified Accuracy"] = f"{cert_acc}"
+        wandb.summary[f"Accuracy on Certified"] = f"{cert_acc_oncert}"
+        wandb.summary[f"Empirical Accuracy under attacks"] = f"{emp_acc}"
         wandb.summary[f"Certified Radius"] = f"{rad_ls}"
         console.log(f'[bold][green]Done Evaluating robustness: :white_check_mark:')
+
+def empirical_metric_clean(loader:DataLoader, dataset:str, model:torch.nn.Module, pgd_step:int, rads:list, num_class:int, device:torch.device):
+
+    emp_acc = []
+    metric = torchmetrics.classification.Accuracy(task="multiclass", num_classes=num_class).to(device)
+
+    for rad in rads:
+
+        for i, batch in enumerate(loader):
+            feat, target = batch
+            feat, target = feat.to(device), target.to(device)
+
+            if dataset == 'mnist':
+                data_denorm = denorm(feat, device=device)
+            elif dataset == 'cifar10':
+                data_denorm = denorm(feat, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
+            elif dataset == 'utk':
+                data_denorm = feat 
+
+            adv_data = pgd_attack(image=data_denorm, label=target, steps=pgd_step, model=model, rad=rad, alpha=2/255, device=device)
+            if dataset == 'mnist':
+                adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
+            elif dataset == 'cifar10':
+                adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
+
+            adv_scores = model(adv_data)
+            metric.update(torch.nn.Softmax(dim=1)(adv_scores), target)
+
+        emp_acc.append(metric.compute().item())
+
+    name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+    path = f'results/dict/{name}.jpg'
+    while (os.path.exists(path)):
+        name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+        path = f'results/dict/{name}.jpg'
+
+    plt.figure(figsize=(5,5))
+    plt.plot(range(len(rads)), emp_acc)
+    plt.xticks(np.arange(len(rads)), [f'{a:.2f}' for a in rads])
+    plt.ylabel('Empirical Accuracy')
+    plt.xlabel('Certified Radius')
+    plt.savefig(path, dpi=200, bbox_inches='tight')
+    img = Image.open(path)
+    arr = np.array(img)
+    return arr, emp_acc
+
+def empirical_metric_dp(loader:DataLoader, dataset:str, models:Sequence[Module], pgd_step:int, rads:list, num_class:int, device:torch.device):
+
+    emp_acc = []
+    metric = torchmetrics.classification.Accuracy(task="multiclass", num_classes=num_class).to(device)
+
+    for rad in rads:
+
+        for i, batch in enumerate(loader):
+            feat, target = batch
+            feat, target = feat.to(device), target.to(device)
+
+            if dataset == 'mnist':
+                data_denorm = denorm(feat, device=device)
+            elif dataset == 'cifar10':
+                data_denorm = denorm(feat, device=device, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
+            elif dataset == 'utk':
+                data_denorm = feat 
+
+            adv_data = pgd_attack_dp(image=data_denorm, label=target, steps=pgd_step, model_list=models, rad=rad, alpha=2/255, device=device)
+            if dataset == 'mnist':
+                adv_data = transforms.Normalize((0.1307,), (0.3081,))(adv_data)
+            elif dataset == 'cifar10':
+                adv_data = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(adv_data)
+
+            for mi, m in enumerate(models):
+                score = m(adv_data)
+                if mi == 0:
+                    adv_scores = score.clone()
+                else:
+                    adv_scores = adv_scores + score.clone()
+
+            adv_scores = adv_scores / (len(models) + 1e-12)
+            final_pred = adv_scores.max(1, keepdim=True)[1]
+            metric.update(torch.nn.Softmax(dim=1)(adv_scores), target)
+
+        emp_acc.append(metric.compute().item())
+
+    name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+    path = f'results/dict/{name}.jpg'
+    while (os.path.exists(path)):
+        name = ''.join(random.choice(string.ascii_lowercase) for i in range(20))
+        path = f'results/dict/{name}.jpg'
+
+    plt.figure(figsize=(5,5))
+    plt.plot(range(len(rads)), emp_acc)
+    plt.xticks(np.arange(len(rads)), [f'{a:.2f}' for a in rads])
+    plt.ylabel('Empirical Accuracy')
+    plt.xlabel('Certified Radius')
+    plt.savefig(path, dpi=200, bbox_inches='tight')
+    img = Image.open(path)
+    arr = np.array(img)
+    return arr, emp_acc

@@ -4,7 +4,7 @@ from typing import Dict
 from torchmetrics import Metric
 from torch.optim import Optimizer
 from torch.nn import Module
-from Utils.console import console
+from Models.utils import clip_weight
 
 Device = torch.device
 
@@ -24,8 +24,14 @@ def forward_clean(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
     return loss.item(), feat.size(dim=0)
 
 def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: Optimizer, 
-                  obj:Module, pred_fn:Module, clip:float, ns:float, l2:torch.Tensor=None, get:bool=False):
+                  obj:Module, pred_fn:Module, clipw:float, clip:float, ns:float, l2:torch.Tensor=None, get:bool=False):
     
+    if get == False:
+        model = clip_weight(model=model, clip=clipw)
+    else:
+        with torch.no_grad():
+            model = clip_weight(model=model, clip=clipw)
+
     feat, target = batch
     feat = feat.to(device, dtype=torch.float)
     target = target.to(device, dtype=torch.long)
