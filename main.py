@@ -46,7 +46,7 @@ def run(args, date, device):
         torch.cuda.empty_cache()
         robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=50, history=att_hist)
     else:
-        model_list, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
+        model_list, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader, model=model, device=device, history=model_hist, name=name['model'])
         model_hist = evaltdp(args=args, te_loader=te_loader, model_list=model_list, device=device, history=model_hist)
         torch.cuda.empty_cache()
         robust_eval_dp(args=args, model_list=model_list, device=device, te_loader=te_loader, num_plot=20, history=att_hist)
