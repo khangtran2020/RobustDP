@@ -3,13 +3,14 @@ import torchmetrics
 from copy import deepcopy
 from rich.progress import Progress
 from typing import Dict
+from torch.utils.data import DataLoader
 from Models.utils import init_model
 from Models.modules.adam import CustomAdamOptimizer
 from Models.train_eval import tr_dpsgd, eval_fn, eval_multi_fn
 from Utils.console import console
 from Utils.tracking import tracker_log, wandb
 
-def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.data.DataLoader, model:torch.nn.Module, 
+def traindp(args, tr_loader:DataLoader, va_loader:DataLoader, te_loader:DataLoader, model:torch.nn.Module, 
             device:torch.device, history:Dict, name=str):
     
     model_name = '{}.pt'.format(name)
@@ -55,6 +56,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
             if epoch < args.epochs - 1:
                 tr_loss, tr_perf = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clipw=args.clipw, clip=args.clip, ns=args.ns, device=device)
                 va_loss, va_perf = eval_fn(loader=va_loader, model=model, obj=objective, metric=metrics, clipw=None, pred_fn=pred_fn, device=device)
+                te_loss, te_perf = eval_fn(loader=te_loader, model=model, obj=objective, metric=metrics, clipw=None, pred_fn=pred_fn, device=device)
                 torch.save(model.state_dict(), args.model_path + model_name)
             else:
                 grad, bz = tr_dpsgd(loader=tr_loader, model=model, obj=objective, opt=optimizer, metric=metrics, pred_fn=pred_fn, clipw=args.clipw, clip=args.clip, ns=args.ns, device=device, get=True)
@@ -90,6 +92,7 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
 
                     tr_loss, tr_perf = eval_multi_fn(loader=tr_loader, models=model_list, obj=objective, metric=metrics, device=device, pred_fn=pred_fn)
                     va_loss, va_perf = eval_multi_fn(loader=va_loader, models=model_list, obj=objective, metric=metrics, device=device, pred_fn=pred_fn)
+                    te_loss, te_perf = eval_multi_fn(loader=te_loader, models=model_list, obj=objective, metric=metrics, device=device, pred_fn=pred_fn)
                     for i, m in enumerate(model_list):
                         torch.save(m.state_dict(), args.model_path + f'model_{i}_{name}.pt')
 
@@ -99,17 +102,21 @@ def traindp(args, tr_loader:torch.utils.data.DataLoader, va_loader:torch.utils.d
                 "Target epoch": epoch+1,
                 "Target train/loss": tr_loss, 
                 "Target train/acc": tr_perf, 
-                "Target val/loss": va_loss, 
-                "Target val/acc": va_perf,
+                "Target valid/loss": va_loss, 
+                "Target valid/acc": va_perf,
+                "Target tests/loss": te_loss, 
+                "Target tests/acc": te_perf,
             }
             history['tr_loss'].append(tr_loss)
             history['tr_perf'].append(tr_perf)
             history['va_loss'].append(va_loss)
             history['va_perf'].append(va_perf)
+            history['te_loss'].append(te_loss)
+            history['te_perf'].append(te_perf)
             # es(epoch=epoch, epoch_score=va_perf, model=model, model_path=args.model_path + model_name)
             tracker_log(dct=results)
 
-            progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}") 
+            progress.console.print(f"Epoch {epoch}: [yellow]loss[/yellow]: {tr_loss}, [yellow]acc[/yellow]: {tr_perf}, [yellow]va_loss[/yellow]: {va_loss}, [yellow]va_acc[/yellow]: {va_perf}, [yellow]te_loss[/yellow]: {te_loss}, [yellow]te_acc[/yellow]: {te_perf}") 
             progress.advance(tk_tr)
             progress.reset(tk_ev)
         console.log(f"Done Training target model: :white_check_mark:")
@@ -164,6 +171,7 @@ def evaltdp(args, te_loader:torch.utils.data.DataLoader, model_list:list, device
             wandb.run.summary['te_acc'] = '{0:.3f}'.format(te_perf)
             history['best_test_loss'] = te_loss
             history['best_test_perf'] = te_perf
+            console.log(f"Overall test accuracy: {te_perf}")
             metrics.reset()
 
     return history
