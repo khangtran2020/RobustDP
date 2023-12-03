@@ -328,7 +328,7 @@ def robust_eval_dp(args, model_list:list, device:torch.device, te_loader:torch.u
             ub = top_k[:, 1] + bound
             abstain_mask = (lb > ub).int()
             idx = get_index_by_value(a=abstain_mask, val=1)
-            radius = (lb - ub) / (4 * (num_c - 1) * args.clipw)
+            radius = (lb - ub) / (4 * (num_c - 1) * args.clipw).clamp(min=1e-12)
             init_pred = org_scores.max(1, keepdim=True)[1]
 
 
