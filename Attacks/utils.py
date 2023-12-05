@@ -539,6 +539,7 @@ def random_smoothing(data:torch.Tensor, model:Module, num_sample:int, device:tor
 
     bs = data.size(dim=0)
     tile_data = data.tile(dims=(num_sample,))
+    console.log(f"Size of the tile data:", tile_data.size())
     noise = torch.FloatTensor(tile_data.shape).normal_(0, ns).to(device)
     tile_data = tile_data + noise
     score = model(tile_data)
