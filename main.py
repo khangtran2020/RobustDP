@@ -7,9 +7,9 @@ from config import parse_args
 from Data.read import read_data
 from Models.utils import init_model
 from Runs.clean import train, evalt
-from Runs.dpsgd import traindp, evaltdp
-from Attacks.utils import robust_eval_clean, robust_eval_dp
-from Models.utils import lip_clip
+from Runs.rdp import traindp, evaltdp
+from Runs.dpsgd import traindpog
+from Attacks.utils import robust_eval_clean, robust_eval_dp, robust_eval_rs
 from Utils.utils import print_args, seed_everything, init_history, get_name, save_dict
 from Utils.console import console
 from Utils.tracking import init_tracker
@@ -44,7 +44,20 @@ def run(args, date, device):
         model, model_hist = train(args=args, tr_loader=tr_loader, va_loader=va_loader, model=model, device=device, history=model_hist, name=name['model'])
         model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
         torch.cuda.empty_cache()
-        robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=50, history=att_hist)
+        if args.evmode == 'all':
+            robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=50, history=att_hist)
+            robust_eval_rs(args=args, model=model, device=device, te_loader=te_loader, history=att_hist)
+        elif args.evmode == 'rs':
+            robust_eval_rs(args=args, model=model, device=device, te_loader=te_loader, history=att_hist)
+    elif args.gen_mode == 'dpog':
+        model, model_hist = traindpog(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader, model=model, device=device, history=model_hist, name=name['model'])
+        model_hist = evalt(args=args, te_loader=te_loader, model=model, device=device, history=model_hist)
+        torch.cuda.empty_cache()
+        if args.evmode == 'all':
+            robust_eval_clean(args=args, model=model, device=device, te_loader=te_loader, num_plot=50, history=att_hist)
+            robust_eval_rs(args=args, model=model, device=device, te_loader=te_loader, history=att_hist)
+        elif args.evmode == 'rs':
+            robust_eval_rs(args=args, model=model, device=device, te_loader=te_loader, history=att_hist)
     else:
         model_list, model_hist = traindp(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader, model=model, device=device, history=model_hist, name=name['model'])
         model_hist = evaltdp(args=args, te_loader=te_loader, model_list=model_list, device=device, history=model_hist)

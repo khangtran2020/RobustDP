@@ -42,7 +42,9 @@ def add_dp_group(group):
 
 def add_model_attack_group(group):
     group.add_argument("--att_mode", type=str, default='fsgm-clean', help="Attack mode", required=True)
+    group.add_argument("--evmode", type=str, default='all', help="Evaluate mode", required=True)
     group.add_argument("--pgd_steps", type=int, default=50, help='training step for pgd')
+    group.add_argument("--rs_ns", type=float, default=1.0, help='noise scale of randomized smoothing')
 
 def parse_args():
     parser = argparse.ArgumentParser()

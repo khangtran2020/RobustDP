@@ -8,6 +8,7 @@ import torchmetrics
 import numpy as np
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
+from scipy.stats import norm
 from typing import Dict
 from PIL import Image
 from torch.nn import Module
@@ -533,3 +534,71 @@ def empirical_metric_dp(loader:DataLoader, dataset:str, models:Sequence[Module],
     img = Image.open(path)
     arr = np.array(img)
     return arr, emp_acc
+
+def random_smoothing(data:torch.Tensor, model:Module, num_sample:int, device:torch.device, ns:float, pred_fn:Module):
+
+    bs = data.size(dim=0)
+    tile_data = data.tile(dims=(num_sample,))
+    noise = torch.FloatTensor(tile_data.shape).normal_(0, ns).to(device)
+    tile_data = tile_data + noise
+    score = model(tile_data)
+    pred = pred_fn(score)
+    
+    predict = []
+    radius = []
+    for i in range(bs):
+        scr = pred[int(i*num_sample):int((i+1)*num_sample)].sum(dim=0) / num_sample
+        predict.append(torch.argmax(scr).item())
+        top_k, idx = torch.topk(input=scr, k=2)
+        bound = hoeffding_bound(nobs=num_sample, alpha=0.05, bonferroni_hyp_n=pred.size(dim=1))
+        lb = top_k[0] - bound
+        ub = top_k[1] + bound
+        if lb.item() > ub.item():
+            rad = (ns/2)*(norm.ppf(lb.item()) - norm.ppf(ub.item()))
+            radius.append(rad)        
+    return predict, radius
+
+def robust_eval_rs(args, model:torch.nn.Module, device:torch.device, te_loader:DataLoader, history:Dict):
+
+    with console.status("Evaluating robustness") as status:
+
+        model.eval()
+        # Accuracy counter
+        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
+        metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
+
+        pred = torch.Tensor([]).to(device)
+        gtar = torch.Tensor([]).to(device)
+        crad = torch.Tensor([]).to(device)
+        for i, batch in enumerate(te_loader):
+
+            data, target = batch
+            data, target = data.to(device), target.to(device)
+
+            predict, rad = random_smoothing(data=data, model=model, num_sample=100, device=device, ns=args.rs_ns, pred_fn=torch.nn.Softmax(dim=1))
+
+            crad = torch.cat((crad, torch.Tensor(rad)), dim=0)
+            pred = torch.cat((pred, torch.Tensor(predict)), dim=0)
+            gtar = torch.cat((gtar, target), dim=0)
+            
+        final_acc = metrics(pred, gtar)
+        correct = (pred.int() == gtar.int()).int()
+        rad_ls, cert_acc, cert_acc_oncert, img_crt, img_acccrt = certified_metric(radius=crad, correct=correct)
+
+        images = wandb.Image(
+            img_crt, caption="Certified Accuracy"
+        )
+        wandb.log({"Certified Accuracy": images})
+        images = wandb.Image(
+            img_acccrt, caption="Certified Accuracy"
+        )
+        wandb.log({"Accuracy on Certified Prediction": images})
+        
+        history['rs_certified_radius'] = rad_ls
+        history['rs_certified_acc'] = cert_acc
+        history['rs_acc_oncert'] = cert_acc_oncert
+        wandb.summary[f"Corretness of bound performance RS"] = f"{final_acc}"
+        wandb.summary[f"Certified Accuracy RS"] = f"{cert_acc}"
+        wandb.summary[f"Accuracy on Certified RS"] = f"{cert_acc_oncert}"
+        wandb.summary[f"Certified Radius RS"] = f"{rad_ls}"
+        console.log(f'[bold][green]Done Evaluating robustness: :white_check_mark:')
