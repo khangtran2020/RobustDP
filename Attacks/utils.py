@@ -538,7 +538,7 @@ def empirical_metric_dp(loader:DataLoader, dataset:str, models:Sequence[Module],
 def random_smoothing(data:torch.Tensor, model:Module, num_sample:int, device:torch.device, ns:float, pred_fn:Module):
 
     bs = data.size(dim=0)
-    tile_data = data.tile(dims=(num_sample,))
+    tile_data = data.tile(dims=(num_sample, 1, 1, 1))
     console.log(f"Size of the tile data:", tile_data.size())
     noise = torch.FloatTensor(tile_data.shape).normal_(0, ns).to(device)
     tile_data = tile_data + noise
