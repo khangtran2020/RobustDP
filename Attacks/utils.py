@@ -568,9 +568,9 @@ def robust_eval_rs(args, model:torch.nn.Module, device:torch.device, te_loader:D
         metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
         metrics_tar = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
 
-        pred = torch.Tensor([]).to(device)
-        gtar = torch.Tensor([]).to(device)
-        crad = torch.Tensor([]).to(device)
+        pred = torch.Tensor([])
+        gtar = torch.Tensor([])
+        crad = torch.Tensor([])
         for i, batch in enumerate(te_loader):
 
             data, target = batch
