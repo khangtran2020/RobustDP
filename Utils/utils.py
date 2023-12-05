@@ -28,7 +28,10 @@ def get_name(args, current_date):
     date_str = f'{current_date.day}{current_date.month}{current_date.year}-{current_date.hour}{current_date.minute}'
     data_keys = ['data', 'seed', 'data_mode']
     model_keys = ['data', 'gen_mode', 'seed', 'model', 'lr', 'nlay', 'hdim', 'epochs', 'opt', 'clipw']
-    gen_keys = ['data', 'gen_mode', 'data_mode', 'seed', 'model', 'nlay', 'hdim']
+    if args.gen_mode == 'clean':
+        gen_keys = ['data', 'gen_mode', 'data_mode', 'seed', 'model', 'nlay', 'hdim', 'clipw']
+    else:
+        gen_keys = ['data', 'gen_mode', 'data_mode', 'seed', 'model', 'nlay', 'hdim', 'clipw', 'ns', 'clip', 'sp_rate']
     att_keys = ['att_mode']
 
     general_str = ''
