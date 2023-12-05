@@ -585,17 +585,23 @@ def robust_eval_rs(args, model:torch.nn.Module, device:torch.device, te_loader:D
         final_acc = metrics(pred, gtar)
         correct = (pred.int() == gtar.int()).int()
         console.log(f"Size of crad: {crad.size()}, size of pred: {pred.size()}, size of gtar: {gtar.size()}")
-        rad_ls, cert_acc, cert_acc_oncert, img_crt, img_acccrt = certified_metric(radius=crad, correct=correct)
+        if crad.size(dim=0) > 0:
+            rad_ls, cert_acc, cert_acc_oncert, img_crt, img_acccrt = certified_metric(radius=crad, correct=correct)
 
-        images = wandb.Image(
-            img_crt, caption="Certified Accuracy"
-        )
-        wandb.log({"Certified Accuracy": images})
-        images = wandb.Image(
-            img_acccrt, caption="Certified Accuracy"
-        )
-        wandb.log({"Accuracy on Certified Prediction": images})
-        
+            images = wandb.Image(
+                img_crt, caption="Certified Accuracy"
+            )
+            wandb.log({"Certified Accuracy": images})
+            images = wandb.Image(
+                img_acccrt, caption="Certified Accuracy"
+            )
+            wandb.log({"Accuracy on Certified Prediction": images})
+        else:
+            rad_ls = []
+            cert_acc = []
+            cert_acc_oncert = []
+            final_acc = 0
+            
         history['rs_certified_radius'] = rad_ls
         history['rs_certified_acc'] = cert_acc
         history['rs_acc_oncert'] = cert_acc_oncert
