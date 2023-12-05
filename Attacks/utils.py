@@ -574,7 +574,7 @@ def robust_eval_rs(args, model:torch.nn.Module, device:torch.device, te_loader:D
         for i, batch in enumerate(te_loader):
 
             data, target = batch
-            data, target = data.to(device), target.to(device)
+            data, target = data.to(device), target
 
             predict, rad = random_smoothing(data=data, model=model, num_sample=100, device=device, ns=args.rs_ns, pred_fn=torch.nn.Softmax(dim=1))
 
