@@ -584,6 +584,7 @@ def robust_eval_rs(args, model:torch.nn.Module, device:torch.device, te_loader:D
             
         final_acc = metrics(pred, gtar)
         correct = (pred.int() == gtar.int()).int()
+        console.log(f"Size of crad: {crad.size()}, size of pred: {pred.size()}, size of gtar: {gtar.size()}")
         rad_ls, cert_acc, cert_acc_oncert, img_crt, img_acccrt = certified_metric(radius=crad, correct=correct)
 
         images = wandb.Image(
