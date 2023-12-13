@@ -51,7 +51,7 @@ def forward_dpsgd(model:Module, batch:tuple, device:Device, metric:Metric, opt: 
                 if tensor.grad is not None:
                     new_grad = tensor.grad.clone()
                     saved_var[tensor_name].add_(new_grad)
-            opt.zero_grad()
+            model.zero_grad()
 
         for tensor_name, tensor in model.named_parameters():
             # if tensor.grad is not None:
